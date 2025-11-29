@@ -12,6 +12,8 @@
 #include "systems/HandleCollisions.h"
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
+#include "systems/RenderCurrency.h"
+#include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderSystemHelpers.h"
 #include "systems/TestSystem.h"
@@ -66,12 +68,14 @@ void game() {
 
   {
     systems.register_render_system(std::make_unique<BeginWorldRender>());
+    systems.register_render_system(std::make_unique<RenderPhotoReveal>());
     systems.register_render_system(std::make_unique<RenderBrick>());
     systems.register_render_system(std::make_unique<RenderBall>());
     systems.register_render_system(std::make_unique<EndWorldRender>());
     systems.register_render_system(
         std::make_unique<BeginPostProcessingRender>());
     systems.register_render_system(std::make_unique<RenderRenderTexture>());
+    systems.register_render_system(std::make_unique<RenderCurrency>());
     afterhours::ui::register_render_systems<InputAction>(
         systems, InputAction::ToggleUILayoutDebug);
     systems.register_render_system(std::make_unique<EndDrawing>());

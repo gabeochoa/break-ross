@@ -73,6 +73,7 @@ Preload &Preload::make_singleton() {
         .set_theme_color(ui::Theme::Usage::Accent, raylib::GREEN);
 
     sophie.addComponent<ui::AutoLayoutRoot>();
+    EntityHelper::registerSingleton<ui::AutoLayoutRoot>(sophie);
     sophie.addComponent<ui::UIComponentDebug>("sophie");
     sophie.addComponent<ui::UIComponent>(sophie.id)
         .set_desired_width(afterhours::ui::screen_pct(1.f))

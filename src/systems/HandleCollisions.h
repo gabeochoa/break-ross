@@ -23,7 +23,6 @@ bool handle_ball_inside_brick(Transform &ball_transform,
   ball_transform.velocity.x = 0.0f;
   ball_transform.velocity.y = 0.0f;
   brick_health.amount -= damage;
-  brick_entity.cleanup = !brick_health.amount;
   return true;
 }
 
@@ -45,7 +44,6 @@ bool handle_ball_edge_collision(vec2 ball_center, float ball_radius,
   }
 
   brick_health.amount -= damage;
-  brick_entity.cleanup = !brick_health.amount;
 
   float distance = std::sqrt(distance_sq);
   vec2 normal = {dx / distance, dy / distance};

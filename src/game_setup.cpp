@@ -2,8 +2,10 @@
 
 #include "components.h"
 #include "eq.h"
+#include "game_constants.h"
 #include "settings.h"
 #include <afterhours/ah.h>
+#include <afterhours/src/plugins/autolayout.h>
 
 static afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
                                      int damage) {
@@ -23,15 +25,29 @@ static afterhours::Entity &make_brick(vec2 position, vec2 size, int health) {
   return brick;
 }
 
-void make_sophie() {
+template <typename Component, typename... Args>
+static void addIfMissing(afterhours::Entity &entity, Args &&...args) {
+  if (!entity.has<Component>()) {
+    entity.addComponent<Component>(std::forward<Args>(args)...);
+    afterhours::EntityHelper::registerSingleton<Component>(entity);
+  }
+}
+
+static afterhours::Entity &get_sophie() {
   afterhours::Entity &sophie =
-      afterhours::EntityHelper::createPermanentEntity();
-  sophie.addComponent<IsShopManager>(100, 1, 100);
-  afterhours::EntityHelper::registerSingleton<IsShopManager>(sophie);
+      afterhours::EntityHelper::get_singleton<afterhours::ui::AutoLayoutRoot>();
+  if (!sophie.has<afterhours::ui::AutoLayoutRoot>()) {
+    log_error("Sophie entity not found - make_singleton() must be called "
+              "before setup_game()");
+  }
+  return sophie;
 }
 
 void setup_game() {
-  make_sophie();
+  afterhours::Entity &sophie = get_sophie();
+
+  addIfMissing<IsShopManager>(sophie, 100, 1, 100);
+  addIfMissing<IsPhotoReveal>(sophie, game_constants::BRICK_CELL_SIZE);
 
   IsShopManager *shop =
       afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
@@ -43,19 +59,16 @@ void setup_game() {
   make_ball(vec2{screen_width / 2.0f, screen_height / 2.0f},
             vec2{200.0f, 200.0f}, radius, shop->ball_damage);
 
-  constexpr int cols = 100;
-  constexpr int rows = 50;
-  constexpr float brick_size = 30.0f;
-  constexpr float spacing = 5.0f;
-  constexpr float start_x = 50.0f;
-  constexpr float start_y = 50.0f;
+  for (int row = 0; row < game_constants::GRID_HEIGHT; ++row) {
+    for (int col = 0; col < game_constants::GRID_WIDTH; ++col) {
+      float x =
+          game_constants::BRICK_START_X + col * game_constants::BRICK_CELL_SIZE;
+      float y =
+          game_constants::BRICK_START_Y + row * game_constants::BRICK_CELL_SIZE;
 
-  for (int row = 0; row < rows; ++row) {
-    for (int col = 0; col < cols; ++col) {
-      float x = start_x + col * (brick_size + spacing);
-      float y = start_y + row * (brick_size + spacing);
-
-      make_brick(vec2{x, y}, vec2{brick_size, brick_size}, 1);
+      make_brick(vec2{x, y},
+                 vec2{game_constants::BRICK_SIZE, game_constants::BRICK_SIZE},
+                 1);
     }
   }
 }
