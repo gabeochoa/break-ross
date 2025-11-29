@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "systems/BallPhysics.h"
 #include "systems/HandleCollisions.h"
+#include "systems/HandleShopInput.h"
 #include "systems/RebuildPhotoReveal.h"
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
@@ -19,7 +20,9 @@
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderSystemHelpers.h"
+#include "systems/SpawnNewBalls.h"
 #include "systems/TestSystem.h"
+#include "systems/UpdateBallUpgrades.h"
 #include "testing/test_app.h"
 #include "testing/test_input.h"
 #include "testing/test_macros.h"
@@ -64,6 +67,10 @@ void game() {
     systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
     systems.register_fixed_update_system(
         std::make_unique<RebuildPhotoReveal>());
+
+    systems.register_update_system(std::make_unique<HandleShopInput>());
+    systems.register_update_system(std::make_unique<SpawnNewBalls>());
+    systems.register_update_system(std::make_unique<UpdateBallUpgrades>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();

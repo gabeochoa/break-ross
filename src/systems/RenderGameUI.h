@@ -137,10 +137,7 @@ private:
                        font_size, 1.0f, text_color);
 
     if (mouse_clicked && hovered && can_afford) {
-      log_info("render_shop_button: button clicked! label={}, cost={}", label,
-               cost);
       purchase_func();
-      log_info("render_shop_button: purchase_func completed");
     }
 
     return item_y;

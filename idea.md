@@ -23,25 +23,25 @@ An incremental game that combines pong and brick breaker mechanics, where player
 **Goal**: Get basic gameplay working with ball control and brick breaking
 
 #### Tasks
-- [ ] **Ball Control System**
+- [x] **Ball Control System**
   - Implement player-controlled ball with direct movement
   - Basic ball physics (velocity, bouncing)
   - Ball collision detection with walls
   - Ball rendering
 
-- [ ] **Brick System**
+- [x] **Brick System**
   - Create brick grid layout
   - Brick rendering
   - Basic brick collision detection
   - Brick destruction on hit
   - Simple brick patterns
 
-- [ ] **Basic Physics**
+- [x] **Basic Physics**
   - Ball-brick collision response
   - Ball-wall bouncing
   - Basic physics loop integration
 
-- [ ] **Simple Rendering**
+- [x] **Simple Rendering**
   - Render ball
   - Render brick grid
   - Basic camera/viewport
@@ -65,7 +65,7 @@ An incremental game that combines pong and brick breaker mechanics, where player
   - Pixel collection by player ball (proximity-based)
   - Pixel collection range/radius
 
-- [ ] **Currency System**
+- [x] **Currency System**
   - Pixel counter/display
   - Currency tracking
   - UI for displaying pixel count
@@ -91,27 +91,27 @@ An incremental game that combines pong and brick breaker mechanics, where player
 **Goal**: Implement basic photo reveal system at small scale
 
 #### Tasks
-- [ ] **Photo Loading**
+- [x] **Photo Loading**
   - Load 500×500 test photo
   - Simple texture loading with Raylib
   - Photo rendering as background
 
-- [ ] **Reveal Tracking**
+- [x] **Reveal Tracking**
   - Track which regions are revealed (simple boolean grid or bitmap)
   - Reveal state data structure
   - Mark regions as revealed when bricks are broken
 
-- [ ] **Basic Reveal Rendering**
+- [x] **Basic Reveal Rendering**
   - Render only revealed portions of photo
   - Use RenderTexture2D or masking approach
   - Simple reveal visualization
 
-- [ ] **Reveal Mechanics**
+- [x] **Reveal Mechanics**
   - Uncover photo regions based on brick destruction
   - Calculate reveal percentage
   - Visual feedback for reveals
 
-- [ ] **Test Photo Generation**
+- [x] **Test Photo Generation**
   - Create simple Python script to generate 500×500 test images
   - Script location: `scripts/generate_photos.py`
   - Generate basic test patterns
