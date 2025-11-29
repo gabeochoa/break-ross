@@ -61,6 +61,9 @@ struct MapRevealSystem {
       return;
     }
 
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+
     float reveal_radius_sq = radius * radius;
     int center_grid_x = game_constants::world_to_grid_x(position.x);
     int center_grid_y = game_constants::world_to_grid_y(position.y);
@@ -93,6 +96,9 @@ struct MapRevealSystem {
 
         if (dist_sq <= reveal_radius_sq) {
           fog->set_revealed(grid_x, grid_y);
+          if (photo_reveal) {
+            photo_reveal->set_revealed(grid_x, grid_y);
+          }
         }
       }
     }

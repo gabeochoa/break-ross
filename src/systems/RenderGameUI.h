@@ -42,13 +42,12 @@ private:
 
   void render_photo_reveal(float padding_x, float padding_y, float line_spacing,
                            float font_size) const {
-    IsPhotoReveal *photo_reveal =
-        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
-    if (photo_reveal) {
-      photo_reveal->update_reveal_percentage();
+    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
+    if (fog) {
+      float reveal_percentage = fog->get_reveal_percentage();
       std::string reveal_text =
           "Revealed: " +
-          std::to_string(static_cast<int>(photo_reveal->reveal_percentage)) +
+          std::to_string(static_cast<int>(reveal_percentage)) +
           "%";
       raylib::DrawTextEx(uiFont, reveal_text.c_str(),
                          {padding_x, padding_y + line_spacing}, font_size, 1.0f,

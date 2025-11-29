@@ -8,8 +8,8 @@ patterns = {
     'RenderPhotoReveal': r'RenderPhotoReveal[^:]*::for_each_with[^\n]*\n[^+]*\+\s+(\d+)',
     'RenderBrick': r'RenderBrick[^:]*::for_each_with[^\n]*\n[^+]*\+\s+(\d+)',
     'HandleCollisions': r'HandleCollisions::once[^\n]*\n[^+]*\+\s+(\d+)',
-    'BallPhysics': r'BallPhysics[^:]*::for_each_with[^\n]*\n[^+]*\+\s+(\d+)',
-    'RenderBall': r'RenderBall[^:]*::for_each_with[^\n]*\n[^+]*\+\s+(\d+)',
+    'CarPhysics': r'CarPhysics[^:]*::for_each_with[^\n]*\n[^+]*\+\s+(\d+)',
+    'RenderCar': r'RenderCar[^:]*::for_each_with[^\n]*\n[^+]*\+\s+(\d+)',
     'SystemManager::render': r'SystemManager::render[^\n]*\n[^+]*\+\s+(\d+)',
     'SystemManager::fixed_tick': r'SystemManager::fixed_tick[^\n]*\n[^+]*\+\s+(\d+)',
 }

@@ -347,18 +347,20 @@ An incremental game where you control a square that travels along real-world roa
   - **Pre-processing Pipeline:**
     - Use Python script to process OSM data
     - Extract only roads (filter by highway tags)
+    - Extract traffic signals and stop signs
     - Simplify road network (remove footpaths, very minor roads)
     - Convert lat/lon to game coordinates
     - Build road graph (nodes and edges)
-    - Export to binary format for fast loading
-    - Script: `scripts/process_nyc_roads.py`
+    - Export to binary format for fast loading (see Binary Map Format Specification)
+    - Script: `scripts/process_osm_to_binary.py`
   
   - **Runtime Loading:**
-    - Load pre-processed NYC road data
-    - Parse binary road format
+    - Load pre-processed NYC road data from binary format
+    - Fast binary deserialization in C++
     - Build road graph in memory
     - Road rendering system
     - Pathfinding for square movement
+    - Traffic system initialization (lights, stop signs)
   
   - **Libraries/Tools:**
     - **osmium-tool** - Extract roads from OSM PBF
@@ -505,6 +507,69 @@ An incremental game where you control a square that travels along real-world roa
 
 ---
 
+## Binary Map Format Specification
+
+### Format Design
+- **Binary format** for dense, efficient storage and fast loading
+- Compact representation of road networks, traffic signals, and map data
+- **Multiple LOD (Level of Detail) levels** for efficient rendering at different zoom levels
+- Optimized for C++ runtime loading
+
+### Data Structure
+- **Header**: Magic number, version, metadata (bounds, LOD count, segment counts per LOD, etc.)
+- **Multiple LOD Levels** (e.g., LOD 0-3 matching zoom levels):
+  - **LOD 0** (Overview/Zoomed Out): Only major highways and primary roads, highly simplified
+  - **LOD 1** (Medium Zoom): Highways, primary, and secondary roads
+  - **LOD 2** (Close Zoom): All major roads including residential
+  - **LOD 3** (Full Detail/Zoomed In): Complete road network with all detail
+- **Road Segments per LOD**: 
+  - Start/end coordinates (float32)
+  - Road type/hierarchy (uint8)
+  - Traffic rules (stop signs, traffic lights) at intersections
+  - Connected segment indices
+- **Traffic Data**:
+  - Traffic light positions and states (per LOD, simplified at lower LODs)
+  - Stop sign positions (only at higher LODs)
+  - Intersection data
+- **Node Graph**: Road network connectivity for pathfinding (per LOD)
+
+### Conversion Script
+- **Script**: `scripts/process_osm_to_binary.py`
+- **Input**: OSM PBF file (downloaded from Geofabrik or OSM)
+- **Process**:
+  1. Download OSM data (or use existing PBF file)
+  2. Parse OSM PBF format
+  3. Extract roads (filter by highway tags)
+  4. Extract traffic signals and stop signs
+  5. Generate multiple LOD levels:
+     - LOD 0: Filter to only highways/primary, heavy simplification
+     - LOD 1: Add secondary roads, moderate simplification
+     - LOD 2: Add residential roads, light simplification
+     - LOD 3: Full detail, minimal simplification
+  6. Convert lat/lon to game coordinates
+  7. Build road graph (nodes and edges) for each LOD
+  8. Serialize all LODs to binary format
+- **Output**: Binary map file (`.bmap` or similar) containing all LOD levels
+- **Libraries**: 
+  - `osmium` (Python) - OSM PBF parsing
+  - `OSMnx` - Road network analysis
+  - `NetworkX` - Graph manipulation
+  - Custom binary serialization
+
+### Runtime Loading
+- Fast binary deserialization in C++
+- **Simulation vs Rendering**:
+  - **Simulation** (pathfinding, car movement, traffic): Always uses full detail (LOD 3) for accurate gameplay
+  - **Rendering** (visual display): Switches between LOD levels based on camera zoom level
+    - Zoomed out → LOD 0 (overview, fewer segments for performance)
+    - Zoomed in → LOD 3 (full detail, all segments)
+- Load full detail LOD for simulation, appropriate rendering LOD for display
+- Direct memory mapping possible for very large files
+- Load entire map or tile-based loading for large regions
+- Smooth LOD transitions in rendering as player zooms in/out
+
+---
+
 ## Technical Details
 
 ### Gameplay Mechanics
@@ -531,6 +596,13 @@ An incremental game where you control a square that travels along real-world roa
 - Road difficulty based on distance from starting area
 - Pathfinding for square movement along roads
 
+#### NPC Cars and Traffic System
+- NPC cars drive around on roads to make the city feel alive
+- NPC cars are visible but do not reveal fog of war
+- Traffic simulation with red lights and stop signs (using data from OpenStreetMap dataset)
+- NPC cars follow traffic rules (stop at red lights, yield at stop signs)
+- Adds atmosphere and makes the world feel more dynamic and lived-in
+
 #### Economy
 - Currency earned from mapping roads (distance-based)
 - Currency earned from discovering new areas
@@ -544,11 +616,22 @@ An incremental game where you control a square that travels along real-world roa
 - Currency generation rate
 - New squares
 - Automation upgrades (idle progression)
+- Laser reveal upgrade: Squares can shoot out a laser every X ms that reveals any part of the road ahead of them
+- Radar pulse upgrade: Periodic circular pulse that reveals a radius around the square (like sonar), revealing nearby roads and intersections
 
 #### Powerups
 **Permanent** (purchased): Square speed, reveal radius, currency rate, multi-square, etc.
 
 **Temporary** (drops): Speed boost, reveal range boost, currency multiplier, etc.
+
+#### Day/Night Cycle
+- Visual day/night cycle that affects the atmosphere and lighting of the world map
+- Fog of war color changes: blue/green during day, gradually transitions to black at night
+- Implemented as a shader for performance
+- Gameplay effects:
+  - Cars/squares move slower at night
+  - Fog of war reveal radius/cone should be more visually obvious (enhanced visibility of reveal area)
+- Adds visual variety and sense of time passing as you explore
 
 ### Fog of War and World Map System
 
