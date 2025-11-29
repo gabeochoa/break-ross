@@ -176,7 +176,11 @@ output: $(MAIN_EXE)
 	$(cp_resources_cmd)
 
 sign: $(MAIN_EXE)
-	$(sign_cmd) $(MAIN_EXE)
+	@if [ -f ent.plist ]; then \
+		$(sign_cmd) $(MAIN_EXE); \
+	else \
+		echo "Warning: ent.plist not found, skipping code signing"; \
+	fi
 
 run: output
 	./$(MAIN_EXE)
@@ -199,5 +203,36 @@ cppcheck:
 		--suppress=useInitializationList --suppress=duplicateCondition \
 		--suppress=nullPointerRedundantCheck --suppress=cstyleCast
 
-.PHONY: count countall cppcheck
+# Profiling targets (macOS only)
+ifeq ($(UNAME_S),Darwin)
+prof: output
+	@if ! command -v xctrace >/dev/null 2>&1; then \
+		echo "Error: xctrace requires full Xcode installation."; \
+		echo "Current developer directory: $$(xcode-select -p)"; \
+		echo ""; \
+		echo "Options:"; \
+		echo "  1. Install Xcode from the App Store"; \
+		echo "  2. Use 'make prof-sample' for basic profiling with Command Line Tools"; \
+		echo "  3. Run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer"; \
+		exit 1; \
+	fi
+	rm -rf recording.trace/
+	xctrace record --template 'Time Profiler' --output 'recording.trace' --launch $(MAIN_EXE)
+
+prof-sample: output
+	@PROFILE_FILE="profile_$$(date +%Y%m%d_%H%M%S).txt"; \
+	echo "Profiling with 'sample' (works with Command Line Tools)..."; \
+	echo "Run your game, then in another terminal run:"; \
+	echo "  sample $$(pgrep -f break_ross.exe) 10 -f $$PROFILE_FILE"; \
+	echo ""; \
+	echo "Or to profile for 10 seconds automatically:"; \
+	./$(MAIN_EXE) & \
+	PID=$$!; \
+	sleep 2; \
+	sample $$PID 10 -f $$PROFILE_FILE; \
+	kill $$PID 2>/dev/null || true; \
+	echo "Profile saved to $$PROFILE_FILE"
+endif
+
+.PHONY: count countall cppcheck prof prof-sample
 

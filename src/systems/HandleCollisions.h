@@ -64,10 +64,34 @@ void restore_ball_velocity(Transform &ball_transform, vec2 &stored_velocity) {
     ball_transform.velocity = stored_velocity;
   }
 }
+
+bool is_nearby(vec2 ball_center, float radius,
+               const Transform &brick_transform) {
+  float brick_left = brick_transform.position.x;
+  float brick_right = brick_transform.position.x + brick_transform.size.x;
+  float brick_top = brick_transform.position.y;
+  float brick_bottom = brick_transform.position.y + brick_transform.size.y;
+
+  float expanded_left = ball_center.x - radius;
+  float expanded_right = ball_center.x + radius;
+  float expanded_top = ball_center.y - radius;
+  float expanded_bottom = ball_center.y + radius;
+
+  return !(brick_right < expanded_left || brick_left > expanded_right ||
+           brick_bottom < expanded_top || brick_top > expanded_bottom);
+}
 } // namespace
 
 struct HandleCollisions : afterhours::System<> {
   virtual void once(float) override {
+    auto alive_bricks = EQ().whereHasComponent<Transform>()
+                            .whereHasTag(ColliderTag::Rect)
+                            .whereHasComponent<HasHealth>()
+                            .whereLambda([](const afterhours::Entity &e) {
+                              return e.get<HasHealth>().amount > 0;
+                            })
+                            .gen();
+
     auto balls = EQ().whereHasComponent<Transform>()
                      .whereHasTag(ColliderTag::Circle)
                      .whereHasComponent<CanDamage>()
@@ -81,20 +105,16 @@ struct HandleCollisions : afterhours::System<> {
       vec2 ball_center = {ball_transform.position.x + ball_radius,
                           ball_transform.position.y + ball_radius};
 
-      auto nearby_bricks = EQ().whereHasComponent<Transform>()
-                               .whereHasTag(ColliderTag::Rect)
-                               .whereHasComponent<HasHealth>()
-                               .whereNearby(ball_center, ball_radius * 2.0f)
-                               .whereLambda([](const afterhours::Entity &e) {
-                                 return e.get<HasHealth>().amount > 0;
-                               })
-                               .gen();
-
       bool ball_inside_any_brick = false;
       vec2 stored_velocity = ball_transform.velocity;
 
-      for (afterhours::Entity &brick_entity : nearby_bricks) {
+      for (afterhours::Entity &brick_entity : alive_bricks) {
         Transform &brick_transform = brick_entity.get<Transform>();
+
+        if (!is_nearby(ball_center, ball_radius * 2.0f, brick_transform)) {
+          continue;
+        }
+
         HasHealth &brick_health = brick_entity.get<HasHealth>();
 
         float brick_left = brick_transform.position.x;
