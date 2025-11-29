@@ -21,6 +21,7 @@ struct Transform : afterhours::BaseComponent {
 enum struct ColliderTag : afterhours::TagId {
   Circle = 0,
   Rect = 1,
+  Square = 2,
 };
 
 struct HasHealth : afterhours::BaseComponent {
@@ -285,4 +286,96 @@ struct BrickGrid : afterhours::BaseComponent {
   bool has_brick(int grid_x, int grid_y) const {
     return get_health(grid_x, grid_y) > 0;
   }
+};
+
+struct RoadSegment {
+  vec2 start;
+  vec2 end;
+  float width{2.0f};
+};
+
+struct RoadNetwork : afterhours::BaseComponent {
+  std::vector<RoadSegment> segments;
+  std::vector<bool> visited_segments;
+  bool is_loaded{false};
+
+  RoadNetwork() = default;
+
+  void mark_visited(size_t segment_index) {
+    if (segment_index < visited_segments.size()) {
+      visited_segments[segment_index] = true;
+    }
+  }
+
+  bool is_visited(size_t segment_index) const {
+    if (segment_index >= visited_segments.size()) {
+      return false;
+    }
+    return visited_segments[segment_index];
+  }
+
+  size_t find_random_unvisited_segment() const {
+    std::vector<size_t> unvisited;
+    for (size_t i = 0; i < segments.size(); ++i) {
+      if (!is_visited(i)) {
+        unvisited.push_back(i);
+      }
+    }
+    if (unvisited.empty()) {
+      return SIZE_MAX;
+    }
+    static std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<size_t> dist(0, unvisited.size() - 1);
+    return unvisited[dist(rng)];
+  }
+};
+
+struct FogOfWar : afterhours::BaseComponent {
+  std::bitset<game_constants::GRID_SIZE> revealed_cells;
+  float reveal_radius{50.0f};
+  bool is_dirty{false};
+
+  FogOfWar() = default;
+
+  bool is_revealed(int grid_x, int grid_y) const {
+    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
+        grid_y >= game_constants::GRID_HEIGHT) {
+      return false;
+    }
+    return revealed_cells[grid_y * game_constants::GRID_WIDTH + grid_x];
+  }
+
+  void set_revealed(int grid_x, int grid_y) {
+    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
+        grid_y >= game_constants::GRID_HEIGHT) {
+      return;
+    }
+    int idx = grid_y * game_constants::GRID_WIDTH + grid_x;
+    if (!revealed_cells[idx]) {
+      revealed_cells[idx] = true;
+      is_dirty = true;
+    }
+  }
+
+  float get_reveal_percentage() const {
+    int revealed_count = 0;
+    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
+      if (revealed_cells[i]) {
+        revealed_count++;
+      }
+    }
+    return (static_cast<float>(revealed_count) /
+            static_cast<float>(game_constants::GRID_SIZE)) *
+           100.0f;
+  }
+};
+
+struct RoadFollowing : afterhours::BaseComponent {
+  size_t current_segment_index{0};
+  float progress_along_segment{0.0f};
+  float speed{100.0f};
+  bool reverse_direction{false};
+
+  RoadFollowing() = default;
+  RoadFollowing(float speed_in) : speed(speed_in) {}
 };

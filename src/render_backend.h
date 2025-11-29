@@ -21,8 +21,17 @@ inline void DrawCircleV(vec2 center, float radius, raylib::Color color) {
   raylib::DrawCircleV(center, radius, color);
 }
 
+inline void DrawRectangleV(vec2 position, vec2 size, raylib::Color color) {
+  raylib::DrawRectangleV(position, size, color);
+}
+
 inline void DrawRectangleRec(raylib::Rectangle rec, raylib::Color color) {
   raylib::DrawRectangleRec(rec, color);
+}
+
+inline void DrawLineEx(vec2 startPos, vec2 endPos, float thick,
+                       raylib::Color color) {
+  raylib::DrawLineEx(startPos, endPos, thick, color);
 }
 
 inline void DrawTexture(raylib::Texture2D texture, int posX, int posY,

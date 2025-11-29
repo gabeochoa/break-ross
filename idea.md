@@ -2,67 +2,73 @@
 
 ## High-Level Concept
 
-An incremental game where you control Google Maps-style cars that drive on roads to map the entire world. Start with a single car mapping your local area, then purchase more cars and upgrades to expand coverage. The game uses a tile-based system showing the world map, with roads that cars follow. As cars drive on roads, they reveal the map underneath. Each fully mapped region unlocks a comic frame in the gallery telling the story of that part of the world. The goal is to map the entire world, starting from a small area and scaling up to a massive 20k×20k world map.
+An incremental game where you control a square that travels along real-world roads (starting with New York City) to uncover a fog of war. The square follows road paths, revealing the map underneath as it travels. Start with a single square, then purchase more squares and upgrades to expand coverage faster. The game uses a tile-based system showing the world map with real road networks. As squares travel on roads, they reveal the map in a fog-of-war style. Each fully mapped region unlocks a comic frame in the gallery. The goal is to map the entire area, starting with NYC and eventually scaling up to larger regions.
 
 ### Core Gameplay Loop
 
-1. **Drive**: Control a mapping car (or watch autonomous cars) drive on roads
-2. **Map**: Cars reveal the world map as they drive on roads
+1. **Travel**: Control a square (or watch autonomous squares) travel along roads
+2. **Reveal**: Squares reveal the world map in fog-of-war style as they travel on roads
 3. **Collect**: Earn currency from mapping roads and discovering areas
-4. **Spend**: Use currency to purchase more cars or upgrades (speed, range, etc.)
+4. **Spend**: Use currency to purchase more squares or upgrades (speed, reveal radius, etc.)
 5. **Expand**: Uncover new regions of the world map
 6. **Unlock Frames**: Fully mapping a region unlocks its comic frame in the gallery
-7. **Scale**: Progress from local area to entire world (500×500 → 20k×20k)
-8. **Prestige**: Reset map and double speed/size to unlock new world regions and comic frames
-9. **Gallery**: Revisit unlocked comic frames in main menu to re-read the world's story
+7. **Scale**: Progress from NYC to larger regions (eventually 20k×20k)
+8. **Prestige**: Reset map and double speed/size to unlock new regions and comic frames
+9. **Gallery**: Revisit unlocked comic frames in main menu to re-read the story
 
 ---
 
 ## Development Phases
 
 ### Phase 1: Core Gameplay Foundation
-**Goal**: Get basic gameplay working with cars driving on roads
+**Goal**: Get basic gameplay working with square traveling on NYC roads with fog of war
 
 #### Tasks
-- [ ] **Car System**
-  - Implement player-controlled mapping car
-  - Car movement along roads (follow road paths)
-  - Car physics (speed, turning, road following)
-  - Car rendering (simple car sprite/icon)
-  - Car direction/orientation based on road direction
+- [ ] **Square System**
+  - Implement player-controlled square
+  - Square movement along roads (follow road paths)
+  - Square physics (speed, road following)
+  - Square rendering (simple colored square)
+  - Square orientation based on road direction
 
-- [ ] **Road System**
-  - Road network generation/loading
+- [ ] **NYC Road System**
+  - Load NYC road data from OpenStreetMap
+  - Parse OSM data (PBF format) for NYC
+  - Extract road ways and nodes
+  - Convert to game coordinate system
   - Road rendering (lines/paths)
-  - Road path following for cars
+  - Road path following for squares
   - Road intersections and branching
-  - Simple road network (start with grid-based roads)
+  - Build road graph for pathfinding
 
-- [ ] **World Map System**
-  - World map tile system (start with 500×500)
-  - Map rendering (unmapped = dark/covered, mapped = revealed)
-  - Map reveal tracking (which tiles are mapped)
-  - Basic map texture/background
+- [ ] **Fog of War System**
+  - World map tile system (NYC area)
+  - Fog of war rendering (unmapped = dark/fog, mapped = revealed)
+  - Map reveal tracking (which tiles are revealed)
+  - Reveal radius around square
+  - Gradual fog reveal as square travels
+  - Basic map texture/background (satellite imagery or stylized)
 
 - [ ] **Mapping Mechanics**
-  - Reveal map tiles as car drives on roads
-  - Track mapped vs unmapped regions
-  - Visual feedback for newly mapped areas
+  - Reveal map tiles in fog-of-war style as square travels on roads
+  - Track revealed vs unrevealed regions
+  - Visual feedback for newly revealed areas
   - Mapping progress calculation
+  - Fog of war shader/rendering
 
 - [ ] **Basic Rendering**
-  - Render world map
-  - Render roads
-  - Render cars
+  - Render world map with fog of war
+  - Render roads (visible on revealed areas)
+  - Render squares
   - Basic camera/viewport
   - Zoom/pan controls
 
 - [ ] **Input System**
-  - Car movement controls (or autonomous driving)
+  - Square movement controls (click to move, or autonomous)
   - Camera controls (zoom, pan)
   - Basic input handling
 
-**Deliverable**: Playable prototype where player controls a car that drives on roads and reveals the map
+**Deliverable**: Playable prototype where player controls a square that travels on NYC roads and reveals fog of war
 
 ---
 
@@ -139,12 +145,12 @@ An incremental game where you control Google Maps-style cars that drive on roads
   - Road type indicators (highway, street, path)
   - Road completion status
 
-- [ ] **Multiple Cars System** (Enhanced)
-  - Purchase additional autonomous mapping cars
-  - Autonomous car AI (pathfinding, road following)
-  - Car management system (assign cars to regions)
-  - Render multiple cars with different colors/icons
-  - Car efficiency/upgrade system
+- [ ] **Multiple Squares System** (Enhanced)
+  - Purchase additional autonomous mapping squares
+  - Autonomous square AI (pathfinding, road following)
+  - Square management system (assign squares to regions)
+  - Render multiple squares with different colors
+  - Square efficiency/upgrade system
 
 - [ ] **Discovery System**
   - Discover points of interest (POIs) while mapping
@@ -160,8 +166,8 @@ An incremental game where you control Google Maps-style cars that drive on roads
 
 - [ ] **Basic Powerups (Temporary)**
   - Powerups from discovering special areas
-  - Speed boost powerup (cars move faster)
-  - Mapping range boost (larger reveal radius)
+  - Speed boost powerup (squares move faster)
+  - Fog reveal range boost (larger reveal radius)
   - Currency multiplier powerup
   - Powerup duration timers
   - Powerup visual indicators
@@ -171,7 +177,7 @@ An incremental game where you control Google Maps-style cars that drive on roads
   - Rare areas that drop powerups
   - Area variety system (cities, landmarks, etc.)
 
-**Deliverable**: Enhanced gameplay with road difficulty, discovery system, multiple cars, and powerups
+**Deliverable**: Enhanced gameplay with road difficulty, discovery system, multiple squares, and powerups
 
 ---
 
@@ -204,11 +210,11 @@ An incremental game where you control Google Maps-style cars that drive on roads
   - Tile position calculation
   - Smooth tile rendering
 
-- [ ] **Mapping System Integration**
-  - Track mapping state per tile
-  - Update mapping when cars drive on roads
-  - Render mapped tiles
-  - Partial mapping support (gradual reveal as cars approach)
+- [ ] **Fog of War System Integration**
+  - Track fog of war state per tile
+  - Update fog reveal when squares travel on roads
+  - Render revealed tiles (fog cleared)
+  - Partial reveal support (gradual fog clearing as squares approach)
 
 - [ ] **Memory Management**
   - Tile cache size limits
@@ -232,24 +238,27 @@ An incremental game where you control Google Maps-style cars that drive on roads
 #### Tasks
 - [ ] **Prestige System**
   - Prestige button/UI
-  - Reset world map on prestige (all areas unmapped again)
-  - Double car speed on prestige (multiplicative)
-  - Double world map size on prestige
+  - Reset world map on prestige (all areas covered in fog again)
+  - Double square speed on prestige (multiplicative)
+  - Expand to larger regions on prestige (NYC → NYC+surrounding → larger area)
   - Track prestige level
   - Prestige confirmation dialog
 
 - [ ] **World Map Size Scaling**
   - Dynamic map size based on prestige level
-  - 500×500 → 1000×1000 → 2000×2000 → etc.
-  - Regenerate road network for new size
+  - Start: NYC area
+  - Prestige 1: NYC + surrounding areas
+  - Prestige 2: Larger region (state/country)
+  - Prestige 3+: Continue expanding
+  - Load new road networks for expanded areas
   - Adjust starting area and road difficulty calculations
   - New world regions unlock with each prestige
 
 - [ ] **Statistics Tracking**
   - Total currency collected (lifetime)
-  - Cars purchased
-  - World map uncovered percentage
-  - Total road distance mapped
+  - Squares purchased
+  - World map uncovered percentage (fog of war cleared)
+  - Total road distance traveled
   - Areas discovered
   - Playtime tracking
   - Prestige count
@@ -258,12 +267,12 @@ An incremental game where you control Google Maps-style cars that drive on roads
 - [ ] **Save/Load System**
   - Save game state to file
   - Load game state from file
-  - Save: currency, upgrades, prestige level, mapped tiles, road network state
+  - Save: currency, upgrades, prestige level, revealed tiles (fog of war state), road network state
   - Load: restore game state
   - Auto-save functionality
 
 - [ ] **Progress Persistence**
-  - Save mapped world regions
+  - Save revealed world regions (fog of war state)
   - Save upgrade purchases
   - Save prestige progress
   - Save road network state
@@ -328,38 +337,53 @@ An incremental game where you control Google Maps-style cars that drive on roads
   - Generate mapping masks for testing
   - Support comic frame generation for world regions
 
-- [ ] **Road Network Generation**
-  - **Option A: Procedural Generation** (Easier, faster to implement)
+- [ ] **NYC Road Data Loading** (Phase 1 Implementation)
+  - **Download NYC OSM Data:**
+    - Get NYC extract from OpenStreetMap
+    - Use Geofabrik downloads (free OSM extracts)
+    - NYC area: ~50-200 MB in PBF format
+    - URL: https://download.geofabrik.de/north-america/us/new-york.html
+  
+  - **Pre-processing Pipeline:**
+    - Use Python script to process OSM data
+    - Extract only roads (filter by highway tags)
+    - Simplify road network (remove footpaths, very minor roads)
+    - Convert lat/lon to game coordinates
+    - Build road graph (nodes and edges)
+    - Export to binary format for fast loading
+    - Script: `scripts/process_nyc_roads.py`
+  
+  - **Runtime Loading:**
+    - Load pre-processed NYC road data
+    - Parse binary road format
+    - Build road graph in memory
+    - Road rendering system
+    - Pathfinding for square movement
+  
+  - **Libraries/Tools:**
+    - **osmium-tool** - Extract roads from OSM PBF
+    - **OSMnx** (Python) - Road network analysis and simplification
+    - **NetworkX** (Python) - Graph manipulation
+    - Custom binary format for C++ loading
+  
+  - **Data Simplification:**
+    - Keep: highways, primary roads, secondary roads, residential streets
+    - Remove: footpaths, cycleways, very minor paths
+    - Reduce points (simplify curves) for performance
+    - Target: ~10-50k road segments for NYC (manageable size)
+
+- [ ] **Road Network Generation** (Future: Other Regions)
+  - **Option A: Procedural Generation** (For testing/other regions)
     - Generate road networks procedurally
     - Grid-based or algorithm-based road patterns
     - Road pathfinding data
     - Road hierarchy (highways, streets, paths)
     - Intersection generation
-    - Good for testing and controlled gameplay
   
-  - **Option B: Real-World Road Data** (More complex, but authentic)
-    - Use OpenStreetMap (OSM) data - free, open-source
-    - Download OSM data in PBF format (compressed, efficient)
-    - Parse OSM data using library (libosmium, or custom parser)
-    - Extract road ways and nodes
-    - Convert to game coordinate system
-    - Simplify road network (reduce detail for performance)
-    - Pre-process into game-friendly format
-    - **Challenges:**
-      - Data size: Full world = terabytes (need partitioning)
-      - Memory: Can't load entire world at once
-      - Processing: Need to simplify/sample roads
-      - Coordinate conversion: Lat/lon to game coords
-    - **Approach:**
-      - Pre-process OSM data into tiles (match game tile system)
-      - Load tiles on-demand (same as world map tiles)
-      - Simplify roads (remove minor streets, reduce points)
-      - Store in efficient format (binary, compressed)
-    - **Libraries/Tools:**
-      - libosmium (C++ OSM parser)
-      - osmium-tool (command-line OSM processing)
-      - OSMnx (Python, for preprocessing)
-      - PostGIS (if using database approach)
+  - **Option B: Real-World Road Data** (For authentic regions)
+    - Use same OSM pipeline as NYC
+    - Process other cities/regions
+    - Expand coverage as game scales
 
 - [ ] **Comic Frame Content**
   - Design comic frame layouts for world regions
@@ -454,9 +478,9 @@ An incremental game where you control Google Maps-style cars that drive on roads
 ### Recommended Implementation Strategy
 
 **For Development/Testing:**
-- Start with procedural generation
-- Get gameplay working first
-- Add real road data later as enhancement
+- Start with NYC OSM data (real roads from the start)
+- Get gameplay working with NYC roads
+- Add more regions later as enhancement
 
 **For Production:**
 - Pre-process OSM data offline
@@ -466,9 +490,9 @@ An incremental game where you control Google Maps-style cars that drive on roads
 - Use same tile pyramid system
 
 **Practical Steps:**
-1. **Phase 1**: Procedural roads (get game working)
-2. **Phase 2**: Add OSM data for specific regions (cities, countries)
-3. **Phase 3**: Expand to more regions based on player interest
+1. **Phase 1**: NYC OSM roads (get game working with real roads)
+2. **Phase 2**: Add more cities/regions using OSM data
+3. **Phase 3**: Expand to larger regions based on player interest
 4. **Phase 4**: Full world coverage (if desired)
 
 **Memory Management:**
@@ -485,35 +509,48 @@ An incremental game where you control Google Maps-style cars that drive on roads
 
 ### Gameplay Mechanics
 
-#### Ball System
-- Autonomous bouncing balls
-- Ball physics: bounces off walls and bricks
-- Can purchase additional balls
+#### Square System
+- Player-controlled or autonomous squares
+- Square movement: follows road paths
+- Square physics: speed, road following, pathfinding
+- Can purchase additional autonomous squares
+- Squares reveal fog of war as they travel
 
-#### Brick System
-- Breakable blocks in grid layout
-- Distance-based health (further from spawn = more health)
-- Health visualization: color coding (green → yellow → orange → red)
-- Different brick types with varying pixel values
-- Special bricks drop powerups
+#### Fog of War System
+- World map starts completely covered in fog
+- Squares reveal map in radius around them as they travel
+- Reveal radius increases with upgrades
+- Fog gradually clears as squares approach
+- Mapped areas show world map underneath
+- Unmapped areas remain dark/foggy
+
+#### Road System
+- Real-world roads from OpenStreetMap (starting with NYC)
+- Roads visible only in revealed areas
+- Road hierarchy: highways, primary, secondary, residential
+- Road difficulty based on distance from starting area
+- Pathfinding for square movement along roads
 
 #### Economy
-- Pixels are earned when bricks are broken
-- Spend pixels on upgrades or new balls
-- Combo system increases pixel multiplier
+- Currency earned from mapping roads (distance-based)
+- Currency earned from discovering new areas
+- Spend currency on upgrades or new squares
+- Combo system increases currency multiplier (consecutive road segments)
 - Combo decays over time
 
 #### Upgrades
-- Ball speed, power
-- New balls
-- Automation upgrades (auto-collect, idle progression)
+- Square speed
+- Fog reveal radius
+- Currency generation rate
+- New squares
+- Automation upgrades (idle progression)
 
 #### Powerups
-**Permanent** (purchased): Ball speed, damage, multi-ball, auto-collect, etc.
+**Permanent** (purchased): Square speed, reveal radius, currency rate, multi-square, etc.
 
-**Temporary** (drops): Speed boost, magnet mode, multi-ball spawn, explosive hits, piercing mode, double pixels, etc.
+**Temporary** (drops): Speed boost, reveal range boost, currency multiplier, etc.
 
-### Photo Uncovering System
+### Fog of War and World Map System
 
 #### Google Maps-Style Tile Pyramid
 - Multiple zoom levels (LOD pyramid)
@@ -535,9 +572,9 @@ An incremental game where you control Google Maps-style cars that drive on roads
 - Reveal tracking per tile
 
 ### Prestige System
-- Resets map and upgrades
-- Doubles ball speed (multiplicative: 2x, 4x, 8x, etc.)
-- Doubles map size (500×500 → 1000×1000 → 2000×2000 → ... → 20k×20k)
+- Resets map (all areas covered in fog again) and upgrades
+- Doubles square speed (multiplicative: 2x, 4x, 8x, etc.)
+- Expands to larger regions (NYC → NYC+surrounding → larger areas → ... → 20k×20k)
 - Each prestige unlocks new comic frames
 - Progress persists across prestiges
 

@@ -15,7 +15,20 @@ struct SpawnNewBalls : afterhours::System<IsShopManager> {
   virtual bool should_run(float) override {
     IsShopManager *shop =
         afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
-    return shop->ball_count > last_ball_count;
+    if (shop->ball_count <= last_ball_count) {
+      return false;
+    }
+
+    bool has_balls = false;
+    for ([[maybe_unused]] const Transform &transform :
+         afterhours::EntityQuery()
+             .whereHasTag(ColliderTag::Circle)
+             .whereHasComponent<Transform>()
+             .gen_as<Transform>()) {
+      has_balls = true;
+      break;
+    }
+    return has_balls;
   }
 
   virtual void once(float) override {}
@@ -26,10 +39,20 @@ struct SpawnNewBalls : afterhours::System<IsShopManager> {
     int balls_to_spawn = shop.ball_count - last_ball_count;
     last_ball_count = shop.ball_count;
 
-    Transform &existing_ball_transform = afterhours::EntityQuery()
-                                             .whereHasTag(ColliderTag::Circle)
-                                             .whereHasComponent<Transform>()
-                                             .gen_first_as<Transform>();
+    Transform *existing_ball_transform_ptr = nullptr;
+    for (Transform &transform : afterhours::EntityQuery()
+                                    .whereHasTag(ColliderTag::Circle)
+                                    .whereHasComponent<Transform>()
+                                    .gen_as<Transform>()) {
+      existing_ball_transform_ptr = &transform;
+      break;
+    }
+
+    if (!existing_ball_transform_ptr) {
+      return;
+    }
+
+    Transform &existing_ball_transform = *existing_ball_transform_ptr;
 
     float radius = 10.0f;
     int damage = shop.get_ball_damage_value();

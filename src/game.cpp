@@ -15,12 +15,17 @@
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
 #include "systems/RenderFPS.h"
+#include "systems/RenderFogOfWar.h"
 #include "systems/RenderGameUI.h"
 #include "systems/RenderLetterboxBars.h"
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
+#include "systems/RenderRoads.h"
+#include "systems/RenderSquare.h"
 #include "systems/RenderSystemHelpers.h"
+#include "systems/RevealFogOfWar.h"
 #include "systems/SpawnNewBalls.h"
+#include "systems/SquarePhysics.h"
 #include "systems/TestSystem.h"
 #include "systems/UpdateBallUpgrades.h"
 #include "testing/test_app.h"
@@ -64,6 +69,7 @@ void game() {
     afterhours::window_manager::register_update_systems(systems);
 
     systems.register_fixed_update_system(std::make_unique<BallPhysics>());
+    systems.register_fixed_update_system(std::make_unique<SquarePhysics>());
     systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
     systems.register_fixed_update_system(
         std::make_unique<RebuildPhotoReveal>());
@@ -71,6 +77,7 @@ void game() {
     systems.register_update_system(std::make_unique<HandleShopInput>());
     systems.register_update_system(std::make_unique<SpawnNewBalls>());
     systems.register_update_system(std::make_unique<UpdateBallUpgrades>());
+    systems.register_update_system(std::make_unique<RevealFogOfWar>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();
@@ -80,8 +87,11 @@ void game() {
   {
     systems.register_render_system(std::make_unique<BeginWorldRender>());
     systems.register_render_system(std::make_unique<RenderPhotoReveal>());
+    systems.register_render_system(std::make_unique<RenderRoads>());
     systems.register_render_system(std::make_unique<RenderBrick>());
     systems.register_render_system(std::make_unique<RenderBall>());
+    systems.register_render_system(std::make_unique<RenderSquare>());
+    systems.register_render_system(std::make_unique<RenderFogOfWar>());
     systems.register_render_system(std::make_unique<EndWorldRender>());
     systems.register_render_system(
         std::make_unique<BeginPostProcessingRender>());
