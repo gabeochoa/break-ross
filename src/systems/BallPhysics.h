@@ -6,6 +6,7 @@
 #include "../settings.h"
 #include <afterhours/ah.h>
 #include <algorithm>
+#include <cmath>
 
 struct BallPhysics
     : afterhours::System<Transform,
@@ -26,19 +27,37 @@ struct BallPhysics
 
     float radius = transform.size.x / 2.0f;
 
-    float old_x = transform.position.x;
-    float old_y = transform.position.y;
+    bool hit_left = transform.position.x < radius;
+    bool hit_right = transform.position.x > screen_width - radius;
+    bool hit_top = transform.position.y < radius;
+    bool hit_bottom = transform.position.y > screen_height - radius;
 
     transform.position.x =
         std::max(radius, std::min(screen_width - radius, transform.position.x));
     transform.position.y = std::max(
         radius, std::min(screen_height - radius, transform.position.y));
 
-    if (transform.position.x != old_x) {
-      transform.velocity.x = -transform.velocity.x;
+    vec2 normal = {0.0f, 0.0f};
+    if (hit_left) {
+      normal.x = 1.0f;
+    } else if (hit_right) {
+      normal.x = -1.0f;
     }
-    if (transform.position.y != old_y) {
-      transform.velocity.y = -transform.velocity.y;
+    if (hit_top) {
+      normal.y = 1.0f;
+    } else if (hit_bottom) {
+      normal.y = -1.0f;
+    }
+
+    float normal_length = std::sqrt(normal.x * normal.x + normal.y * normal.y);
+    if (normal_length > 0.0f) {
+      normal.x /= normal_length;
+      normal.y /= normal_length;
+
+      float dot_product =
+          transform.velocity.x * normal.x + transform.velocity.y * normal.y;
+      transform.velocity.x -= 2.0f * dot_product * normal.x;
+      transform.velocity.y -= 2.0f * dot_product * normal.y;
     }
   }
 };
