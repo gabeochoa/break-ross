@@ -16,6 +16,8 @@
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderSystemHelpers.h"
+#include "systems/RenderFPS.h"
+#include "systems/RenderLetterboxBars.h"
 #include "systems/TestSystem.h"
 #include "systems/UpdateRenderTexture.h"
 #include "testing/test_app.h"
@@ -75,7 +77,9 @@ void game() {
     systems.register_render_system(
         std::make_unique<BeginPostProcessingRender>());
     systems.register_render_system(std::make_unique<RenderRenderTexture>());
+    systems.register_render_system(std::make_unique<RenderLetterboxBars>());
     systems.register_render_system(std::make_unique<RenderCurrency>());
+    systems.register_render_system(std::make_unique<RenderFPS>());
     afterhours::ui::register_render_systems<InputAction>(
         systems, InputAction::ToggleUILayoutDebug);
     systems.register_render_system(std::make_unique<EndDrawing>());
@@ -151,6 +155,8 @@ void run_test(const std::string &test_name, bool slow_mode) {
     systems.register_render_system(
         std::make_unique<BeginPostProcessingRender>());
     systems.register_render_system(std::make_unique<RenderRenderTexture>());
+    systems.register_render_system(std::make_unique<RenderLetterboxBars>());
+    systems.register_render_system(std::make_unique<RenderFPS>());
     afterhours::ui::register_render_systems<InputAction>(
         systems, InputAction::ToggleUILayoutDebug);
     systems.register_render_system(std::make_unique<EndDrawing>());
