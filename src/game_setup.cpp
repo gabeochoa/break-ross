@@ -23,11 +23,15 @@ static afterhours::Entity &make_brick(vec2 position, vec2 size, int health) {
   return brick;
 }
 
-void setup_game() {
-  afterhours::Entity &shop_entity =
+void make_sophie() {
+  afterhours::Entity &sophie =
       afterhours::EntityHelper::createPermanentEntity();
-  shop_entity.addComponent<IsShopManager>(100, 1, 100);
-  afterhours::EntityHelper::registerSingleton<IsShopManager>(shop_entity);
+  sophie.addComponent<IsShopManager>(100, 1, 100);
+  afterhours::EntityHelper::registerSingleton<IsShopManager>(sophie);
+}
+
+void setup_game() {
+  make_sophie();
 
   IsShopManager *shop =
       afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
