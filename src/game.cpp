@@ -13,8 +13,8 @@
 #include "systems/HandleCollisions.h"
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
-#include "systems/RenderCurrency.h"
 #include "systems/RenderFPS.h"
+#include "systems/RenderGameUI.h"
 #include "systems/RenderLetterboxBars.h"
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
@@ -79,7 +79,7 @@ void game() {
         std::make_unique<BeginPostProcessingRender>());
     systems.register_render_system(std::make_unique<RenderRenderTexture>());
     systems.register_render_system(std::make_unique<RenderLetterboxBars>());
-    systems.register_render_system(std::make_unique<RenderCurrency>());
+    systems.register_render_system(std::make_unique<RenderGameUI>());
     systems.register_render_system(std::make_unique<RenderFPS>());
     afterhours::ui::register_render_systems<InputAction>(
         systems, InputAction::ToggleUILayoutDebug);

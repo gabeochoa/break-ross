@@ -11,9 +11,9 @@ struct RenderBrick
   virtual void for_each_with(const afterhours::Entity &,
                              const Transform &transform, const HasHealth &,
                              float) const override {
-    render_backend::DrawRectangleRec({transform.position.x,
-                                      transform.position.y, transform.size.x,
-                                      transform.size.y},
-                                     raylib::GRAY);
+    render_backend::DrawRectangleRec(
+        {transform.position.x, transform.position.y,
+         game_constants::BRICK_CELL_SIZE, game_constants::BRICK_CELL_SIZE},
+        raylib::GRAY);
   }
 };

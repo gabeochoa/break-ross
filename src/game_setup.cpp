@@ -3,9 +3,11 @@
 #include "components.h"
 #include "eq.h"
 #include "game_constants.h"
+#include "render_backend.h"
 #include "settings.h"
 #include <afterhours/ah.h>
 #include <afterhours/src/plugins/autolayout.h>
+#include <afterhours/src/plugins/files.h>
 
 static afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
                                      int damage) {
@@ -49,6 +51,16 @@ void setup_game() {
   addIfMissing<IsShopManager>(sophie, 100, 1, 100);
   addIfMissing<IsPhotoReveal>(sophie, game_constants::BRICK_CELL_SIZE);
 
+  IsPhotoReveal *photo_reveal =
+      afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+  if (photo_reveal && !photo_reveal->is_loaded) {
+    std::filesystem::path photo_path = afterhours::files::get_resource_path(
+        "images/photos", "test_photo_500x500.png");
+    photo_reveal->photo_texture =
+        render_backend::LoadTexture(photo_path.string().c_str());
+    photo_reveal->is_loaded = true;
+  }
+
   IsShopManager *shop =
       afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
 
@@ -58,6 +70,11 @@ void setup_game() {
   float radius = 10.0f;
   make_ball(vec2{screen_width / 2.0f, screen_height / 2.0f},
             vec2{200.0f, 200.0f}, radius, shop->ball_damage);
+
+  for (int i = 0; i < 1000; ++i) {
+    make_ball(vec2{screen_width / 2.0f + i * 10.0f, screen_height / 2.0f},
+              vec2{200.0f, 200.0f}, radius, shop->ball_damage);
+  }
 
   for (int row = 0; row < game_constants::GRID_HEIGHT; ++row) {
     for (int col = 0; col < game_constants::GRID_WIDTH; ++col) {

@@ -64,6 +64,9 @@ struct IsPhotoReveal : afterhours::BaseComponent {
   std::bitset<game_constants::GRID_SIZE> revealed_cells;
   std::vector<RevealedRect> merged_rects;
   float cell_size;
+  raylib::Texture2D photo_texture{};
+  bool is_loaded{false};
+  float reveal_percentage{0.0f};
 
   IsPhotoReveal() = default;
   IsPhotoReveal(float cell_size_in) : cell_size(cell_size_in) {}
@@ -138,5 +141,22 @@ struct IsPhotoReveal : afterhours::BaseComponent {
         merged_rects.push_back(rect);
       }
     }
+    update_reveal_percentage();
+  }
+
+  float get_reveal_percentage() const {
+    int revealed_count = 0;
+    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
+      if (revealed_cells[i]) {
+        revealed_count++;
+      }
+    }
+    return (static_cast<float>(revealed_count) /
+            static_cast<float>(game_constants::GRID_SIZE)) *
+           100.0f;
+  }
+
+  void update_reveal_percentage() {
+    reveal_percentage = get_reveal_percentage();
   }
 };
