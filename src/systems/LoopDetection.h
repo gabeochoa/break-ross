@@ -82,14 +82,6 @@ struct LoopDetection
         }
         road_following.forced_direction_steps =
             RoadFollowing::FORCED_DIRECTION_STEPS;
-        log_info("LoopDetection: Loop detected! (attempt {}/{}) Forcing "
-                 "direction ({:.2f}, "
-                 "{:.2f}) for {} steps",
-                 road_following.forced_direction_attempts,
-                 RoadFollowing::MAX_FORCED_DIRECTION_ATTEMPTS,
-                 road_following.forced_direction.x,
-                 road_following.forced_direction.y,
-                 road_following.forced_direction_steps);
       }
     }
     // Note: Don't reset attempts counter here - it should only reset when we

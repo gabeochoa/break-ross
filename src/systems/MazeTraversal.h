@@ -3,11 +3,8 @@
 #include "../components.h"
 #include "../eq.h"
 #include "../game_constants.h"
-#include "../log.h"
-#include "../log/log_level.h"
 #include <afterhours/ah.h>
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <vector>
 
@@ -112,14 +109,6 @@ struct MazeTraversal
               road_following.segments_without_reveal = 0; // Reset counter
               // forced_direction_attempts will be reset when segment is marked
               // as visited
-              log_info("LoopDetection: Forced direction mode complete, found "
-                       "new segment, returning "
-                       "to normal");
-            } else {
-              log_info("LoopDetection: Forced direction mode complete, but "
-                       "still in visited area (attempt {}/{})",
-                       road_following.forced_direction_attempts,
-                       RoadFollowing::MAX_FORCED_DIRECTION_ATTEMPTS);
             }
           }
         }
@@ -152,9 +141,6 @@ struct MazeTraversal
         last_segment_index = road_following.current_segment_index;
         road_following.current_segment_index = next_segment_index;
         road_following.reverse_direction = next_reverse_direction;
-        log_once_per(std::chrono::milliseconds(1000), LogLevel::LOG_INFO,
-                     "MazeTraversal: Moving from seg {} to seg {}",
-                     last_segment_index, next_segment_index);
       }
     } else {
       // Continue along current segment
@@ -169,12 +155,6 @@ struct MazeTraversal
     road_following.last_position = transform.position;
     transform.velocity.x = normalized_x * road_following.speed;
     transform.velocity.y = normalized_y * road_following.speed;
-
-    // Log position rounded to nearest 5
-    float rounded_x = std::round(transform.position.x / 5.0f) * 5.0f;
-    float rounded_y = std::round(transform.position.y / 5.0f) * 5.0f;
-    log_once_per(std::chrono::milliseconds(500), LogLevel::LOG_INFO,
-                 "Square position: ({:.0f}, {:.0f})", rounded_x, rounded_y);
   }
 
 private:
