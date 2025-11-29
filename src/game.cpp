@@ -1,6 +1,7 @@
 #include "game.h"
 
 #include "components.h"
+#include "game_constants.h"
 #include "game_setup.h"
 #include "input_mapping.h"
 #include "log.h"
@@ -13,13 +14,12 @@
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
 #include "systems/RenderCurrency.h"
+#include "systems/RenderFPS.h"
+#include "systems/RenderLetterboxBars.h"
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderSystemHelpers.h"
-#include "systems/RenderFPS.h"
-#include "systems/RenderLetterboxBars.h"
 #include "systems/TestSystem.h"
-#include "systems/UpdateRenderTexture.h"
 #include "testing/test_app.h"
 #include "testing/test_input.h"
 #include "testing/test_macros.h"
@@ -36,8 +36,9 @@ raylib::RenderTexture2D screenRT;
 raylib::Font uiFont;
 
 void game() {
-  mainRT = raylib::LoadRenderTexture(Settings::get().get_screen_width(),
-                                     Settings::get().get_screen_height());
+  mainRT =
+      raylib::LoadRenderTexture(static_cast<int>(game_constants::WORLD_WIDTH),
+                                static_cast<int>(game_constants::WORLD_HEIGHT));
   screenRT = raylib::LoadRenderTexture(Settings::get().get_screen_width(),
                                        Settings::get().get_screen_height());
   uiFont = raylib::LoadFont(
@@ -119,8 +120,9 @@ void run_test(const std::string &test_name, bool slow_mode) {
 
   test_input::slow_test_mode = slow_mode;
 
-  mainRT = raylib::LoadRenderTexture(Settings::get().get_screen_width(),
-                                     Settings::get().get_screen_height());
+  mainRT =
+      raylib::LoadRenderTexture(static_cast<int>(game_constants::WORLD_WIDTH),
+                                static_cast<int>(game_constants::WORLD_HEIGHT));
   screenRT = raylib::LoadRenderTexture(Settings::get().get_screen_width(),
                                        Settings::get().get_screen_height());
   uiFont = raylib::LoadFont(
@@ -141,8 +143,6 @@ void run_test(const std::string &test_name, bool slow_mode) {
   {
     afterhours::input::register_update_systems(systems);
     afterhours::window_manager::register_update_systems(systems);
-
-    systems.register_update_system(std::make_unique<UpdateRenderTexture>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();

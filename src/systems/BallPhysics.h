@@ -2,8 +2,7 @@
 
 #include "../components.h"
 #include "../eq.h"
-#include "../render_backend.h"
-#include "../settings.h"
+#include "../game_constants.h"
 #include <afterhours/ah.h>
 #include <algorithm>
 #include <cmath>
@@ -11,31 +10,28 @@
 struct BallPhysics
     : afterhours::System<Transform,
                          afterhours::tags::All<ColliderTag::Circle>> {
-  float screen_width = 0.0f;
-  float screen_height = 0.0f;
-
-  virtual void once(float) override {
-    screen_width = static_cast<float>(Settings::get().get_screen_width());
-    screen_height = static_cast<float>(Settings::get().get_screen_height());
-  }
+  virtual void once(float) override {}
 
   virtual void for_each_with(afterhours::Entity &, Transform &transform,
                              float dt) override {
-
     transform.position.x += transform.velocity.x * dt;
     transform.position.y += transform.velocity.y * dt;
 
     float radius = transform.size.x / 2.0f;
 
     bool hit_left = transform.position.x < radius;
-    bool hit_right = transform.position.x > screen_width - radius;
+    bool hit_right =
+        transform.position.x > game_constants::WORLD_WIDTH - radius;
     bool hit_top = transform.position.y < radius;
-    bool hit_bottom = transform.position.y > screen_height - radius;
+    bool hit_bottom =
+        transform.position.y > game_constants::WORLD_HEIGHT - radius;
 
     transform.position.x =
-        std::max(radius, std::min(screen_width - radius, transform.position.x));
-    transform.position.y = std::max(
-        radius, std::min(screen_height - radius, transform.position.y));
+        std::max(radius, std::min(game_constants::WORLD_WIDTH - radius,
+                                  transform.position.x));
+    transform.position.y =
+        std::max(radius, std::min(game_constants::WORLD_HEIGHT - radius,
+                                  transform.position.y));
 
     vec2 normal = {0.0f, 0.0f};
     if (hit_left) {
