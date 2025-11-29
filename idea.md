@@ -1,53 +1,68 @@
-# Incremental Photo Uncovering Game
+# World Mapping Incremental Game
 
 ## High-Level Concept
 
-An incremental game that combines pong and brick breaker mechanics, where players uncover interconnected photos designed as comic frames that tell a story and provide upgrades. The game starts at the pixel level and progressively scales up to reveal a massive 20k x 20k photo composed of comic frames. Each fully uncovered photo region unlocks a comic frame in the main menu gallery, allowing players to re-read the story they've uncovered.
+An incremental game where you control Google Maps-style cars that drive on roads to map the entire world. Start with a single car mapping your local area, then purchase more cars and upgrades to expand coverage. The game uses a tile-based system showing the world map, with roads that cars follow. As cars drive on roads, they reveal the map underneath. Each fully mapped region unlocks a comic frame in the gallery telling the story of that part of the world. The goal is to map the entire world, starting from a small area and scaling up to a massive 20k×20k world map.
 
 ### Core Gameplay Loop
 
-1. **Play**: Watch autonomous bouncing balls break blocks and collect pixels
-2. **Collect**: Gather pixels (currency) from broken bricks
-3. **Spend**: Use gold/pixels to purchase upgrades or buy new balls
-4. **Uncover**: Reveal portions of interconnected comic frame photos as you progress
-5. **Unlock Frames**: Fully uncovering a photo region unlocks its comic frame in the gallery
-6. **Scale**: Progress from pixel-level detail to increasingly larger photo resolutions
-7. **Prestige**: Reset map and double speed/size to unlock new comic frames
-8. **Gallery**: Revisit unlocked comic frames in main menu to re-read the story
+1. **Drive**: Control a mapping car (or watch autonomous cars) drive on roads
+2. **Map**: Cars reveal the world map as they drive on roads
+3. **Collect**: Earn currency from mapping roads and discovering areas
+4. **Spend**: Use currency to purchase more cars or upgrades (speed, range, etc.)
+5. **Expand**: Uncover new regions of the world map
+6. **Unlock Frames**: Fully mapping a region unlocks its comic frame in the gallery
+7. **Scale**: Progress from local area to entire world (500×500 → 20k×20k)
+8. **Prestige**: Reset map and double speed/size to unlock new world regions and comic frames
+9. **Gallery**: Revisit unlocked comic frames in main menu to re-read the world's story
 
 ---
 
 ## Development Phases
 
 ### Phase 1: Core Gameplay Foundation
-**Goal**: Get basic gameplay working with autonomous balls and brick breaking
+**Goal**: Get basic gameplay working with cars driving on roads
 
 #### Tasks
-- [x] **Ball System**
-  - Implement autonomous bouncing balls
-  - Basic ball physics (velocity, bouncing)
-  - Ball collision detection with walls
-  - Ball rendering
+- [ ] **Car System**
+  - Implement player-controlled mapping car
+  - Car movement along roads (follow road paths)
+  - Car physics (speed, turning, road following)
+  - Car rendering (simple car sprite/icon)
+  - Car direction/orientation based on road direction
 
-- [x] **Brick System**
-  - Create brick grid layout
-  - Brick rendering
-  - Basic brick collision detection
-  - Brick destruction on hit
-  - Simple brick patterns
+- [ ] **Road System**
+  - Road network generation/loading
+  - Road rendering (lines/paths)
+  - Road path following for cars
+  - Road intersections and branching
+  - Simple road network (start with grid-based roads)
 
-- [x] **Basic Physics**
-  - Ball-brick collision response
-  - Ball-wall bouncing
-  - Basic physics loop integration
+- [ ] **World Map System**
+  - World map tile system (start with 500×500)
+  - Map rendering (unmapped = dark/covered, mapped = revealed)
+  - Map reveal tracking (which tiles are mapped)
+  - Basic map texture/background
 
-- [x] **Simple Rendering**
-  - Render ball
-  - Render brick grid
+- [ ] **Mapping Mechanics**
+  - Reveal map tiles as car drives on roads
+  - Track mapped vs unmapped regions
+  - Visual feedback for newly mapped areas
+  - Mapping progress calculation
+
+- [ ] **Basic Rendering**
+  - Render world map
+  - Render roads
+  - Render cars
   - Basic camera/viewport
-  - Clear background
+  - Zoom/pan controls
 
-**Deliverable**: Playable prototype with autonomous balls that break bricks
+- [ ] **Input System**
+  - Car movement controls (or autonomous driving)
+  - Camera controls (zoom, pan)
+  - Basic input handling
+
+**Deliverable**: Playable prototype where player controls a car that drives on roads and reveals the map
 
 ---
 
@@ -109,50 +124,59 @@ An incremental game that combines pong and brick breaker mechanics, where player
 ---
 
 ### Phase 4: Advanced Gameplay Features
-**Goal**: Add health system, powerups, multiple balls, and combo system
+**Goal**: Add road difficulty, powerups, discovery bonuses, and combo system
 
 #### Tasks
-- [ ] **Brick Health System**
-  - Health calculation based on distance from spawn
-  - Health tracking per brick
-  - Multiple hits required to break high-health bricks
-  - Health visualization (color coding, health bars, or damage states)
+- [ ] **Road Difficulty System**
+  - Road difficulty based on distance from starting area
+  - Harder roads require more time/upgrades to map
+  - Road difficulty visualization (color coding)
+  - Progressive difficulty as you expand outward
 
-- [ ] **Health Visualization**
-  - Color coding system (green → yellow → orange → red)
-  - Optional: Health bars, damage states, crack patterns
-  - Visual feedback for damage
+- [ ] **Road Visualization**
+  - Color coding system for road difficulty
+  - Visual feedback for mapped vs unmapped roads
+  - Road type indicators (highway, street, path)
+  - Road completion status
 
-- [ ] **Multiple Balls System**
-  - Purchase additional autonomous balls
-  - Autonomous ball AI (bouncing, brick breaking)
-  - Ball management system
-  - Render multiple balls
+- [ ] **Multiple Cars System** (Enhanced)
+  - Purchase additional autonomous mapping cars
+  - Autonomous car AI (pathfinding, road following)
+  - Car management system (assign cars to regions)
+  - Render multiple cars with different colors/icons
+  - Car efficiency/upgrade system
+
+- [ ] **Discovery System**
+  - Discover points of interest (POIs) while mapping
+  - POIs give bonus currency
+  - Different POI types (landmarks, cities, etc.)
+  - Discovery notifications
 
 - [ ] **Combo System**
-  - Track consecutive brick breaks
-  - Combo multiplier for pixel collection
+  - Track consecutive road segments mapped
+  - Combo multiplier for currency collection
   - Combo decay over time
   - Combo display/UI
 
 - [ ] **Basic Powerups (Temporary)**
-  - Powerup drops from special bricks
-  - Speed boost powerup
-  - Magnet mode powerup
+  - Powerups from discovering special areas
+  - Speed boost powerup (cars move faster)
+  - Mapping range boost (larger reveal radius)
+  - Currency multiplier powerup
   - Powerup duration timers
   - Powerup visual indicators
 
-- [ ] **Special Bricks**
-  - Different brick types with varying pixel values
-  - Rare bricks that drop powerups
-  - Brick variety system
+- [ ] **Special Areas**
+  - Different area types with varying currency values
+  - Rare areas that drop powerups
+  - Area variety system (cities, landmarks, etc.)
 
-**Deliverable**: Enhanced gameplay with health, combos, multiple balls, and powerups
+**Deliverable**: Enhanced gameplay with road difficulty, discovery system, multiple cars, and powerups
 
 ---
 
-### Phase 5: Photo System (Advanced - Tile Pyramid)
-**Goal**: Implement Google Maps-style tile system for large-scale photos
+### Phase 5: World Map System (Advanced - Tile Pyramid)
+**Goal**: Implement Google Maps-style tile system for large-scale world maps
 
 #### Tasks
 - [ ] **Tile System Architecture**
@@ -180,11 +204,11 @@ An incremental game that combines pong and brick breaker mechanics, where player
   - Tile position calculation
   - Smooth tile rendering
 
-- [ ] **Reveal System Integration**
-  - Track reveal state per tile
-  - Update reveals when bricks break
-  - Render revealed tiles
-  - Partial reveal support (alpha blending or masking)
+- [ ] **Mapping System Integration**
+  - Track mapping state per tile
+  - Update mapping when cars drive on roads
+  - Render mapped tiles
+  - Partial mapping support (gradual reveal as cars approach)
 
 - [ ] **Memory Management**
   - Tile cache size limits
@@ -208,22 +232,25 @@ An incremental game that combines pong and brick breaker mechanics, where player
 #### Tasks
 - [ ] **Prestige System**
   - Prestige button/UI
-  - Reset map on prestige
-  - Double ball speed on prestige (multiplicative)
-  - Double map size on prestige
+  - Reset world map on prestige (all areas unmapped again)
+  - Double car speed on prestige (multiplicative)
+  - Double world map size on prestige
   - Track prestige level
   - Prestige confirmation dialog
 
-- [ ] **Map Size Scaling**
+- [ ] **World Map Size Scaling**
   - Dynamic map size based on prestige level
   - 500×500 → 1000×1000 → 2000×2000 → etc.
-  - Regenerate brick grid for new size
-  - Adjust spawn point and health calculations
+  - Regenerate road network for new size
+  - Adjust starting area and road difficulty calculations
+  - New world regions unlock with each prestige
 
 - [ ] **Statistics Tracking**
-  - Total pixels collected (lifetime)
-  - Balls purchased
-  - Photos uncovered percentage
+  - Total currency collected (lifetime)
+  - Cars purchased
+  - World map uncovered percentage
+  - Total road distance mapped
+  - Areas discovered
   - Playtime tracking
   - Prestige count
   - Statistics UI/display
@@ -231,14 +258,15 @@ An incremental game that combines pong and brick breaker mechanics, where player
 - [ ] **Save/Load System**
   - Save game state to file
   - Load game state from file
-  - Save: pixels, upgrades, prestige level, revealed tiles
+  - Save: currency, upgrades, prestige level, mapped tiles, road network state
   - Load: restore game state
   - Auto-save functionality
 
 - [ ] **Progress Persistence**
-  - Save uncovered photo regions
+  - Save mapped world regions
   - Save upgrade purchases
   - Save prestige progress
+  - Save road network state
   - Persist across game sessions
 
 **Deliverable**: Complete prestige system with save/load functionality
@@ -261,14 +289,14 @@ An incremental game that combines pong and brick breaker mechanics, where player
   - Frame thumbnails
   - Unlock status indicators (locked/unlocked)
   - Frame viewer (full-screen view)
-  - Frame metadata (story text, narrative)
+  - Frame metadata (story text, narrative about world regions)
 
 - [ ] **Frame Unlocking System**
-  - Detect 100% photo region completion
+  - Detect 100% world region completion (all roads mapped)
   - Unlock comic frame on completion
   - Save unlocked frames
   - Frame persistence across prestiges
-  - Frame organization (chronological)
+  - Frame organization (chronological, by world region)
 
 - [ ] **Visual Polish**
   - Unlock animations
@@ -291,19 +319,53 @@ An incremental game that combines pong and brick breaker mechanics, where player
 **Goal**: Create tools for generating photos and comic frames
 
 #### Tasks
-- [ ] **Photo Generation Script**
-  - Python script: `scripts/generate_photos.py`
-  - Generate test images at various sizes (500×500, 1k×1k, 2k×2k, 4k×4k, etc.)
+- [ ] **World Map Generation Script**
+  - Python script: `scripts/generate_maps.py`
+  - Generate test world maps at various sizes (500×500, 1k×1k, 2k×2k, 4k×4k, etc.)
   - Create zoom pyramid (Level 0-3)
   - Output tiles in organized structure: `tiles/zoom{level}/tile_{x}_{y}.png`
-  - Generate reveal masks for testing
-  - Support comic frame generation
+  - Generate road networks
+  - Generate mapping masks for testing
+  - Support comic frame generation for world regions
+
+- [ ] **Road Network Generation**
+  - **Option A: Procedural Generation** (Easier, faster to implement)
+    - Generate road networks procedurally
+    - Grid-based or algorithm-based road patterns
+    - Road pathfinding data
+    - Road hierarchy (highways, streets, paths)
+    - Intersection generation
+    - Good for testing and controlled gameplay
+  
+  - **Option B: Real-World Road Data** (More complex, but authentic)
+    - Use OpenStreetMap (OSM) data - free, open-source
+    - Download OSM data in PBF format (compressed, efficient)
+    - Parse OSM data using library (libosmium, or custom parser)
+    - Extract road ways and nodes
+    - Convert to game coordinate system
+    - Simplify road network (reduce detail for performance)
+    - Pre-process into game-friendly format
+    - **Challenges:**
+      - Data size: Full world = terabytes (need partitioning)
+      - Memory: Can't load entire world at once
+      - Processing: Need to simplify/sample roads
+      - Coordinate conversion: Lat/lon to game coords
+    - **Approach:**
+      - Pre-process OSM data into tiles (match game tile system)
+      - Load tiles on-demand (same as world map tiles)
+      - Simplify roads (remove minor streets, reduce points)
+      - Store in efficient format (binary, compressed)
+    - **Libraries/Tools:**
+      - libosmium (C++ OSM parser)
+      - osmium-tool (command-line OSM processing)
+      - OSMnx (Python, for preprocessing)
+      - PostGIS (if using database approach)
 
 - [ ] **Comic Frame Content**
-  - Design comic frame layouts
-  - Create story/narrative content
+  - Design comic frame layouts for world regions
+  - Create story/narrative content about world areas
   - Generate comic frame images
-  - Organize frames by prestige level
+  - Organize frames by prestige level/world region
 
 - [ ] **Testing Tools**
   - Debug visualization tools
@@ -312,6 +374,110 @@ An incremental game that combines pong and brick breaker mechanics, where player
   - Tile loading visualization
 
 **Deliverable**: Tools for generating game content
+
+---
+
+## Road Data Loading: Feasibility Analysis
+
+### Real-World Road Data Options
+
+#### Option 1: OpenStreetMap (OSM) - Recommended
+**Pros:**
+- Free and open-source
+- Comprehensive global coverage
+- Regularly updated
+- Multiple data formats available
+- Well-documented
+
+**Cons:**
+- Large data size (full world = terabytes)
+- Need to parse and convert formats
+- Requires simplification for game use
+
+**Data Formats:**
+- **PBF** (Protocol Buffer Format) - Compressed, efficient, recommended
+- **XML** - Human-readable but much larger
+- **Shapefile** - Common GIS format
+
+**Implementation Approach:**
+1. **Pre-processing** (Python/offline):
+   - Download OSM extract for region (country/continent)
+   - Use osmium-tool or OSMnx to extract roads
+   - Simplify road network (remove minor roads, reduce points)
+   - Convert to game coordinate system
+   - Split into tiles matching game tile system
+   - Export to binary format for fast loading
+
+2. **Runtime Loading** (C++):
+   - Load road tiles on-demand (same as world map tiles)
+   - Parse binary road data format
+   - Build road graph for pathfinding
+   - Cache loaded road tiles
+
+**Libraries:**
+- **libosmium** (C++) - Fast OSM parser
+- **osmium-tool** - Command-line OSM processing
+- **OSMnx** (Python) - Good for preprocessing/analysis
+
+**Data Size Estimates:**
+- Single country (e.g., USA): ~1-5 GB raw OSM data
+- After simplification: ~100-500 MB
+- Per tile (500×500 equivalent): ~1-10 MB
+- Full world: Terabytes (not practical to load all at once)
+
+#### Option 2: Procedural Generation
+**Pros:**
+- Full control over road patterns
+- Predictable performance
+- Smaller data size
+- Can generate on-the-fly
+- Easier to implement
+
+**Cons:**
+- Not authentic real-world roads
+- May feel less interesting
+- Need to design good algorithms
+
+**Approach:**
+- Grid-based road networks
+- L-system or similar for organic patterns
+- Perlin noise for natural variation
+- Road hierarchy (highways → streets → paths)
+
+#### Option 3: Hybrid Approach
+**Best of Both Worlds:**
+- Use real OSM data for major regions/landmarks
+- Use procedural generation for filler areas
+- Mix authentic and generated content
+- Pre-process OSM data into simplified game format
+
+### Recommended Implementation Strategy
+
+**For Development/Testing:**
+- Start with procedural generation
+- Get gameplay working first
+- Add real road data later as enhancement
+
+**For Production:**
+- Pre-process OSM data offline
+- Extract and simplify roads
+- Convert to game tile format
+- Load on-demand like world map tiles
+- Use same tile pyramid system
+
+**Practical Steps:**
+1. **Phase 1**: Procedural roads (get game working)
+2. **Phase 2**: Add OSM data for specific regions (cities, countries)
+3. **Phase 3**: Expand to more regions based on player interest
+4. **Phase 4**: Full world coverage (if desired)
+
+**Memory Management:**
+- Same approach as world map tiles
+- Load road data per tile
+- Cache recently used tiles
+- Unload distant tiles
+- Road data per tile: ~1-10 MB (after simplification)
+- Can keep ~50-100 road tiles in memory (~100-1000 MB total)
 
 ---
 
