@@ -7,6 +7,7 @@
 #include <afterhours/ah.h>
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 namespace {
 bool is_ball_inside_brick_cell(vec2 ball_center, float brick_left,
@@ -63,6 +64,9 @@ void restore_ball_velocity(Transform &ball_transform, vec2 &stored_velocity) {
 } // namespace
 
 struct HandleCollisions : afterhours::System<> {
+  mutable std::vector<afterhours::Entity *> cached_balls;
+  mutable bool balls_cache_valid{false};
+
   virtual void once(float) override {
     BrickGrid *brick_grid =
         afterhours::EntityHelper::get_singleton_cmp<BrickGrid>();
@@ -85,12 +89,20 @@ struct HandleCollisions : afterhours::System<> {
       return;
     }
 
-    auto balls = EQ().whereHasComponent<Transform>()
-                     .whereHasTag(ColliderTag::Circle)
-                     .whereHasComponent<CanDamage>()
-                     .gen();
+    if (!balls_cache_valid) {
+      cached_balls.clear();
+      auto balls = EQ().whereHasComponent<Transform>()
+                       .whereHasTag(ColliderTag::Circle)
+                       .whereHasComponent<CanDamage>()
+                       .gen();
+      for (afterhours::Entity &ball : balls) {
+        cached_balls.push_back(&ball);
+      }
+      balls_cache_valid = true;
+    }
 
-    for (afterhours::Entity &ball_entity : balls) {
+    for (afterhours::Entity *ball_ptr : cached_balls) {
+      afterhours::Entity &ball_entity = *ball_ptr;
       Transform &ball_transform = ball_entity.get<Transform>();
       CanDamage &ball_damage = ball_entity.get<CanDamage>();
 
