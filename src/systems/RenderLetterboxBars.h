@@ -5,11 +5,14 @@
 #include <afterhours/ah.h>
 #include <afterhours/src/plugins/window_manager.h>
 
-struct RenderLetterboxBars : afterhours::System<afterhours::window_manager::ProvidesCurrentResolution> {
+struct RenderLetterboxBars
+    : afterhours::System<
+          afterhours::window_manager::ProvidesCurrentResolution> {
   virtual ~RenderLetterboxBars() {}
-  virtual void for_each_with(const afterhours::Entity &,
-                             const afterhours::window_manager::ProvidesCurrentResolution &,
-                             float) const override {
+  virtual void
+  for_each_with(const afterhours::Entity &,
+                const afterhours::window_manager::ProvidesCurrentResolution &,
+                float) const override {
     const int window_w = raylib::GetScreenWidth();
     const int window_h = raylib::GetScreenHeight();
     const int content_w = mainRT.texture.width;
@@ -29,4 +32,3 @@ struct RenderLetterboxBars : afterhours::System<afterhours::window_manager::Prov
     }
   }
 };
-
