@@ -11,6 +11,7 @@
 #include <afterhours/src/plugins/files.h>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <nlohmann/json.hpp>
 
 template <typename Component, typename... Args>
@@ -31,14 +32,92 @@ static afterhours::Entity &get_sophie() {
   return sophie;
 }
 
-afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
-                              int damage) {
-  afterhours::Entity &ball = afterhours::EntityHelper::createEntity();
-  ball.addComponent<Transform>(position, velocity,
-                               vec2{radius * 2.0f, radius * 2.0f});
-  ball.enableTag(ColliderTag::Circle);
-  ball.addComponent<CanDamage>(ball.id, damage);
-  return ball;
+afterhours::Entity &make_car(vec2 position, vec2 velocity, float radius,
+                             int damage) {
+  afterhours::Entity &car = afterhours::EntityHelper::createEntity();
+  car.addComponent<Transform>(position, velocity,
+                              vec2{radius * 2.0f, radius * 2.0f});
+  car.enableTag(ColliderTag::Circle);
+  car.addComponent<CanDamage>(car.id, damage);
+
+  RoadNetwork *road_network =
+      afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
+  IsShopManager *shop =
+      afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
+
+  float speed = 250.0f;
+  if (shop) {
+    speed *= shop->get_car_speed_multiplier();
+  }
+
+  RoadFollowing &road_following = car.addComponent<RoadFollowing>(speed);
+
+  if (road_network && road_network->is_loaded &&
+      !road_network->segments.empty()) {
+    size_t nearest_segment = 0;
+    float min_dist_sq = std::numeric_limits<float>::max();
+
+    for (size_t i = 0; i < road_network->segments.size(); ++i) {
+      const RoadSegment &seg = road_network->segments[i];
+      vec2 seg_start = seg.start;
+      vec2 seg_end = seg.end;
+      vec2 seg_dir = {seg_end.x - seg_start.x, seg_end.y - seg_start.y};
+      float seg_len_sq = seg_dir.x * seg_dir.x + seg_dir.y * seg_dir.y;
+
+      if (seg_len_sq < 0.001f) {
+        float dist_sq =
+            (position.x - seg_start.x) * (position.x - seg_start.x) +
+            (position.y - seg_start.y) * (position.y - seg_start.y);
+        if (dist_sq < min_dist_sq) {
+          min_dist_sq = dist_sq;
+          nearest_segment = i;
+        }
+        continue;
+      }
+
+      float t = std::max(
+          0.0f, std::min(1.0f, ((position.x - seg_start.x) * seg_dir.x +
+                                (position.y - seg_start.y) * seg_dir.y) /
+                                   seg_len_sq));
+
+      vec2 closest_point = {seg_start.x + t * seg_dir.x,
+                            seg_start.y + t * seg_dir.y};
+      float dist_sq =
+          (position.x - closest_point.x) * (position.x - closest_point.x) +
+          (position.y - closest_point.y) * (position.y - closest_point.y);
+
+      if (dist_sq < min_dist_sq) {
+        min_dist_sq = dist_sq;
+        nearest_segment = i;
+
+        vec2 seg_to_pos = {position.x - seg_start.x, position.y - seg_start.y};
+        float dot = seg_dir.x * seg_to_pos.x + seg_dir.y * seg_to_pos.y;
+        road_following.reverse_direction = (dot < 0.0f);
+      }
+    }
+
+    road_following.current_segment_index = nearest_segment;
+
+    const RoadSegment &seg = road_network->segments[nearest_segment];
+    vec2 seg_start = road_following.reverse_direction ? seg.end : seg.start;
+    vec2 seg_end = road_following.reverse_direction ? seg.start : seg.end;
+    vec2 seg_dir = {seg_end.x - seg_start.x, seg_end.y - seg_start.y};
+    float seg_len = std::sqrt(seg_dir.x * seg_dir.x + seg_dir.y * seg_dir.y);
+
+    if (seg_len > 0.001f) {
+      vec2 to_pos = {position.x - seg_start.x, position.y - seg_start.y};
+      float t =
+          (to_pos.x * seg_dir.x + to_pos.y * seg_dir.y) / (seg_len * seg_len);
+      road_following.progress_along_segment = std::max(0.0f, std::min(1.0f, t));
+    } else {
+      road_following.progress_along_segment = 0.0f;
+    }
+  } else {
+    road_following.current_segment_index = 0;
+    road_following.progress_along_segment = 0.0f;
+  }
+
+  return car;
 }
 
 afterhours::Entity &make_square(vec2 position, float size, float speed,

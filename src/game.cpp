@@ -8,15 +8,15 @@
 #include "preload.h"
 #include "render_backend.h"
 #include "settings.h"
-#include "systems/BallPhysics.h"
+#include "systems/CarPhysics.h"
 #include "systems/HandleCameraControls.h"
 #include "systems/HandleCollisions.h"
 #include "systems/HandleShopInput.h"
 #include "systems/LoopDetection.h"
 #include "systems/MazeTraversal.h"
 #include "systems/RebuildPhotoReveal.h"
-#include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
+#include "systems/RenderCar.h"
 #include "systems/RenderFPS.h"
 #include "systems/RenderFogOfWar.h"
 #include "systems/RenderGameUI.h"
@@ -27,9 +27,9 @@
 #include "systems/RenderSquare.h"
 #include "systems/RenderSystemHelpers.h"
 #include "systems/RevealFogOfWar.h"
-#include "systems/SpawnNewBalls.h"
+#include "systems/SpawnNewCars.h"
 #include "systems/TestSystem.h"
-#include "systems/UpdateBallUpgrades.h"
+#include "systems/UpdateCarUpgrades.h"
 #include "testing/test_app.h"
 #include "testing/test_input.h"
 #include "testing/test_macros.h"
@@ -72,7 +72,7 @@ void game() {
     afterhours::input::register_update_systems(systems);
     afterhours::window_manager::register_update_systems(systems);
 
-    systems.register_fixed_update_system(std::make_unique<BallPhysics>());
+    systems.register_fixed_update_system(std::make_unique<CarPhysics>());
     systems.register_fixed_update_system(std::make_unique<MazeTraversal>());
     systems.register_fixed_update_system(std::make_unique<LoopDetection>());
     systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
@@ -81,8 +81,8 @@ void game() {
 
     systems.register_update_system(std::make_unique<HandleCameraControls>());
     systems.register_update_system(std::make_unique<HandleShopInput>());
-    systems.register_update_system(std::make_unique<SpawnNewBalls>());
-    systems.register_update_system(std::make_unique<UpdateBallUpgrades>());
+    systems.register_update_system(std::make_unique<SpawnNewCars>());
+    systems.register_update_system(std::make_unique<UpdateCarUpgrades>());
     systems.register_update_system(std::make_unique<RevealFogOfWar>());
 
     auto test_system = std::make_unique<TestSystem>();
@@ -96,7 +96,7 @@ void game() {
     systems.register_render_system(std::make_unique<RenderPhotoReveal>());
     systems.register_render_system(std::make_unique<RenderRoads>());
     systems.register_render_system(std::make_unique<RenderBrick>());
-    systems.register_render_system(std::make_unique<RenderBall>());
+    systems.register_render_system(std::make_unique<RenderCar>());
     systems.register_render_system(std::make_unique<RenderSquare>());
     systems.register_render_system(std::make_unique<RenderFogOfWar>());
     afterhours::camera::register_end_camera(systems);

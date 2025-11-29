@@ -7,13 +7,16 @@
 #include <algorithm>
 #include <cmath>
 
-struct BallPhysics
+struct CarPhysics
     : afterhours::System<Transform,
                          afterhours::tags::All<ColliderTag::Circle>> {
   virtual void once(float) override {}
 
-  virtual void for_each_with(afterhours::Entity &, Transform &transform,
+  virtual void for_each_with(afterhours::Entity &entity, Transform &transform,
                              float dt) override {
+    if (entity.has<RoadFollowing>()) {
+      return;
+    }
     transform.position.x += transform.velocity.x * dt;
     transform.position.y += transform.velocity.y * dt;
 
@@ -61,3 +64,4 @@ struct BallPhysics
     }
   }
 };
+

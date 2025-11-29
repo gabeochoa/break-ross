@@ -3,14 +3,16 @@
 #include "../components.h"
 #include "../eq.h"
 #include "../game_constants.h"
+#include "MapRevealSystem.h"
 #include <afterhours/ah.h>
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
 struct MazeTraversal
-    : afterhours::System<Transform, RoadFollowing,
-                         afterhours::tags::All<ColliderTag::Square>> {
+    : afterhours::System<
+          Transform, RoadFollowing,
+          afterhours::tags::Any<ColliderTag::Square, ColliderTag::Circle>> {
   static size_t last_segment_index;
   static size_t second_last_segment_index;
 
@@ -60,11 +62,8 @@ struct MazeTraversal
     float normalized_x = direction.x / segment_length;
     float normalized_y = direction.y / segment_length;
 
-    // Mark segment as visited and track if it was newly revealed
-    bool was_visited =
-        road_network->is_visited(road_following.current_segment_index);
-    road_network->mark_visited(road_following.current_segment_index);
-    bool just_revealed = !was_visited;
+    bool just_revealed =
+        MapRevealSystem::reveal_segment(road_following.current_segment_index);
 
     // Update segments_without_reveal counter
     if (just_revealed) {

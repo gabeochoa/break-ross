@@ -5,7 +5,8 @@
 #include <afterhours/ah.h>
 #include <afterhours/src/plugins/camera.h>
 
-struct HandleCameraControls : afterhours::System<afterhours::camera::HasCamera> {
+struct HandleCameraControls
+    : afterhours::System<afterhours::camera::HasCamera> {
   virtual void for_each_with(afterhours::Entity &,
                              afterhours::camera::HasCamera &camera,
                              float dt) override {
@@ -33,8 +34,8 @@ struct HandleCameraControls : afterhours::System<afterhours::camera::HasCamera> 
 
     if (move_delta.x != 0.0f || move_delta.y != 0.0f) {
       vec2 current_pos = camera.camera.target;
-      camera.set_position({current_pos.x + move_delta.x,
-                           current_pos.y + move_delta.y});
+      camera.set_position(
+          {current_pos.x + move_delta.x, current_pos.y + move_delta.y});
     }
 
     float current_zoom = camera.camera.zoom;
@@ -54,4 +55,3 @@ struct HandleCameraControls : afterhours::System<afterhours::camera::HasCamera> 
     }
   }
 };
-

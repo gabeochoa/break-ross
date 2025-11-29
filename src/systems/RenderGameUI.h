@@ -93,25 +93,25 @@ private:
     item_y = render_shop_button(
         shop, shop_x, shop_width, shop_padding, item_y, button_width,
         button_height, font_size, mouse_pos, mouse_clicked,
-        shop->get_ball_speed_cost(), shop->ball_speed_level,
-        [shop]() { shop->purchase_ball_speed(); },
-        "Ball Speed (Lv " + std::to_string(shop->ball_speed_level) + ")");
+        shop->get_car_speed_cost(), shop->car_speed_level,
+        [shop]() { shop->purchase_car_speed(); },
+        "Car Speed (Lv " + std::to_string(shop->car_speed_level) + ")");
 
     item_y += item_spacing;
     item_y = render_shop_button(
         shop, shop_x, shop_width, shop_padding, item_y, button_width,
         button_height, font_size, mouse_pos, mouse_clicked,
-        shop->get_ball_damage_cost(), shop->ball_damage_level,
-        [shop]() { shop->purchase_ball_damage(); },
-        "Ball Damage (Lv " + std::to_string(shop->ball_damage_level) + ")");
+        shop->get_car_damage_cost(), shop->car_damage_level,
+        [shop]() { shop->purchase_car_damage(); },
+        "Car Damage (Lv " + std::to_string(shop->car_damage_level) + ")");
 
     item_y += item_spacing;
     item_y = render_shop_button(
         shop, shop_x, shop_width, shop_padding, item_y, button_width,
         button_height, font_size, mouse_pos, mouse_clicked,
-        shop->get_new_ball_cost(), shop->ball_count,
-        [shop]() { shop->purchase_new_ball(); },
-        "New Ball (x" + std::to_string(shop->ball_count) + ")");
+        shop->get_new_car_cost(), shop->car_count,
+        [shop]() { shop->purchase_new_car(); },
+        "New Car (x" + std::to_string(shop->car_count) + ")");
 
     item_y += item_spacing;
     std::string algorithm_name = get_algorithm_name(shop->get_current_algorithm());
