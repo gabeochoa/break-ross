@@ -101,6 +101,13 @@ struct HandleCollisions : afterhours::System<> {
       balls_cache_valid = true;
     }
 
+    const float grid_end_x =
+        game_constants::BRICK_START_X +
+        game_constants::GRID_WIDTH * game_constants::BRICK_CELL_SIZE;
+    const float grid_end_y =
+        game_constants::BRICK_START_Y +
+        game_constants::GRID_HEIGHT * game_constants::BRICK_CELL_SIZE;
+
     for (afterhours::Entity *ball_ptr : cached_balls) {
       afterhours::Entity &ball_entity = *ball_ptr;
       Transform &ball_transform = ball_entity.get<Transform>();
@@ -109,6 +116,13 @@ struct HandleCollisions : afterhours::System<> {
       float ball_radius = ball_transform.size.x / 2.0f;
       vec2 ball_center = {ball_transform.position.x + ball_radius,
                           ball_transform.position.y + ball_radius};
+
+      if (ball_center.x + ball_radius < game_constants::BRICK_START_X ||
+          ball_center.x - ball_radius > grid_end_x ||
+          ball_center.y + ball_radius < game_constants::BRICK_START_Y ||
+          ball_center.y - ball_radius > grid_end_y) {
+        continue;
+      }
 
       int min_grid_x =
           game_constants::world_to_grid_x(ball_center.x - ball_radius);
@@ -119,10 +133,14 @@ struct HandleCollisions : afterhours::System<> {
       int max_grid_y =
           game_constants::world_to_grid_y(ball_center.y + ball_radius);
 
-      min_grid_x = std::max(0, min_grid_x);
-      max_grid_x = std::min(game_constants::GRID_WIDTH - 1, max_grid_x);
-      min_grid_y = std::max(0, min_grid_y);
-      max_grid_y = std::min(game_constants::GRID_HEIGHT - 1, max_grid_y);
+      if (min_grid_x < 0)
+        min_grid_x = 0;
+      if (max_grid_x >= game_constants::GRID_WIDTH)
+        max_grid_x = game_constants::GRID_WIDTH - 1;
+      if (min_grid_y < 0)
+        min_grid_y = 0;
+      if (max_grid_y >= game_constants::GRID_HEIGHT)
+        max_grid_y = game_constants::GRID_HEIGHT - 1;
 
       bool ball_inside_any_brick = false;
       vec2 stored_velocity = ball_transform.velocity;

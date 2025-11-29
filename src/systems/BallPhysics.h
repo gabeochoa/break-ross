@@ -26,12 +26,16 @@ struct BallPhysics
     bool hit_bottom =
         transform.position.y > game_constants::WORLD_HEIGHT - radius;
 
-    transform.position.x =
-        std::max(radius, std::min(game_constants::WORLD_WIDTH - radius,
-                                  transform.position.x));
-    transform.position.y =
-        std::max(radius, std::min(game_constants::WORLD_HEIGHT - radius,
-                                  transform.position.y));
+    const float max_x = game_constants::WORLD_WIDTH - radius;
+    const float max_y = game_constants::WORLD_HEIGHT - radius;
+    if (transform.position.x < radius)
+      transform.position.x = radius;
+    else if (transform.position.x > max_x)
+      transform.position.x = max_x;
+    if (transform.position.y < radius)
+      transform.position.y = radius;
+    else if (transform.position.y > max_y)
+      transform.position.y = max_y;
 
     vec2 normal = {0.0f, 0.0f};
     if (hit_left) {
