@@ -7,6 +7,7 @@
 #include "settings.h"
 #include <afterhours/ah.h>
 #include <afterhours/src/plugins/autolayout.h>
+#include <afterhours/src/plugins/camera.h>
 #include <afterhours/src/plugins/files.h>
 #include <algorithm>
 #include <cmath>
@@ -145,6 +146,18 @@ void setup_game() {
   addIfMissing<BrickGrid>(sophie);
   addIfMissing<RoadNetwork>(sophie);
   addIfMissing<FogOfWar>(sophie);
+  addIfMissing<afterhours::camera::HasCamera>(sophie);
+
+  afterhours::camera::HasCamera *camera =
+      afterhours::EntityHelper::get_singleton_cmp<
+          afterhours::camera::HasCamera>();
+  if (camera) {
+    camera->set_position({game_constants::WORLD_WIDTH * 0.5f,
+                          game_constants::WORLD_HEIGHT * 0.5f});
+    camera->set_offset({game_constants::WORLD_WIDTH * 0.5f,
+                        game_constants::WORLD_HEIGHT * 0.5f});
+    camera->set_zoom(0.75f);
+  }
 
   IsPhotoReveal *photo_reveal =
       afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();

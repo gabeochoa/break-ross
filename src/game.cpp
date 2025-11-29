@@ -9,6 +9,7 @@
 #include "render_backend.h"
 #include "settings.h"
 #include "systems/BallPhysics.h"
+#include "systems/HandleCameraControls.h"
 #include "systems/HandleCollisions.h"
 #include "systems/HandleShopInput.h"
 #include "systems/LoopDetection.h"
@@ -32,6 +33,7 @@
 #include "testing/test_app.h"
 #include "testing/test_input.h"
 #include "testing/test_macros.h"
+#include <afterhours/src/plugins/camera.h>
 #include <afterhours/src/plugins/files.h>
 
 #include <afterhours/src/plugins/animation.h>
@@ -61,6 +63,7 @@ void game() {
     afterhours::window_manager::enforce_singletons(systems);
     afterhours::ui::enforce_singletons<InputAction>(systems);
     afterhours::input::enforce_singletons(systems);
+    afterhours::camera::enforce_singletons(systems);
   }
 
   TestSystem *test_system_ptr = nullptr;
@@ -76,6 +79,7 @@ void game() {
     systems.register_fixed_update_system(
         std::make_unique<RebuildPhotoReveal>());
 
+    systems.register_update_system(std::make_unique<HandleCameraControls>());
     systems.register_update_system(std::make_unique<HandleShopInput>());
     systems.register_update_system(std::make_unique<SpawnNewBalls>());
     systems.register_update_system(std::make_unique<UpdateBallUpgrades>());
@@ -88,12 +92,14 @@ void game() {
 
   {
     systems.register_render_system(std::make_unique<BeginWorldRender>());
+    afterhours::camera::register_begin_camera(systems);
     systems.register_render_system(std::make_unique<RenderPhotoReveal>());
     systems.register_render_system(std::make_unique<RenderRoads>());
     systems.register_render_system(std::make_unique<RenderBrick>());
     systems.register_render_system(std::make_unique<RenderBall>());
     systems.register_render_system(std::make_unique<RenderSquare>());
     systems.register_render_system(std::make_unique<RenderFogOfWar>());
+    afterhours::camera::register_end_camera(systems);
     systems.register_render_system(std::make_unique<EndWorldRender>());
     systems.register_render_system(
         std::make_unique<BeginPostProcessingRender>());
