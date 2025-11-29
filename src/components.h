@@ -74,7 +74,11 @@ struct IsShopManager : afterhours::BaseComponent {
     return get_upgrade_cost(500, car_damage_level);
   }
 
-  int get_new_car_cost() const { return get_upgrade_cost(100, car_count - 1); }
+  int get_new_car_cost() const {
+    // TODO scale this cost based on the number of cars t
+    return 50;
+    //   get_upgrade_cost(100, car_count - 1);
+  }
 
   float get_car_speed_multiplier() const {
     return 1.0f + (car_speed_level * 0.2f);
@@ -550,8 +554,10 @@ struct RoadNetwork : afterhours::BaseComponent {
 
 struct FogOfWar : afterhours::BaseComponent {
   std::bitset<game_constants::GRID_SIZE> revealed_cells;
+  std::bitset<game_constants::GRID_SIZE> reachable_cells;
   float reveal_radius{50.0f};
   bool is_dirty{false};
+  bool reachable_computed{false};
 
   FogOfWar() = default;
 
@@ -572,6 +578,41 @@ struct FogOfWar : afterhours::BaseComponent {
     if (!revealed_cells[idx]) {
       revealed_cells[idx] = true;
       is_dirty = true;
+    }
+  }
+
+  bool is_reachable(int grid_x, int grid_y) const {
+    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
+        grid_y >= game_constants::GRID_HEIGHT) {
+      return false;
+    }
+    return reachable_cells[grid_y * game_constants::GRID_WIDTH + grid_x];
+  }
+
+  void set_reachable(int grid_x, int grid_y) {
+    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
+        grid_y >= game_constants::GRID_HEIGHT) {
+      return;
+    }
+    int idx = grid_y * game_constants::GRID_WIDTH + grid_x;
+    reachable_cells[idx] = true;
+  }
+
+  bool are_all_reachable_revealed() const {
+    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
+      if (reachable_cells[i] && !revealed_cells[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void reveal_all_unreachable() {
+    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
+      if (!reachable_cells[i] && !revealed_cells[i]) {
+        revealed_cells[i] = true;
+        is_dirty = true;
+      }
     }
   }
 
@@ -602,6 +643,10 @@ struct RoadFollowing : afterhours::BaseComponent {
   size_t forced_direction_attempts{
       0}; // Count how many times we've tried forced direction
   MazeAlgorithm current_algorithm{MazeAlgorithm::WallFollower};
+
+  std::vector<size_t>
+      segment_history; // Track last 10 segments for loop detection
+  static constexpr size_t MAX_HISTORY_SIZE = 10;
 
   static constexpr size_t LOOP_DETECTION_THRESHOLD =
       10; // Consecutive visited segments before loop detected (increased)

@@ -8,6 +8,7 @@
 #include "preload.h"
 #include "render_backend.h"
 #include "settings.h"
+#include "systems/AutoRevealUnreachableFog.h"
 #include "systems/CarPhysics.h"
 #include "systems/HandleCameraControls.h"
 #include "systems/HandleCollisions.h"
@@ -84,6 +85,8 @@ void game() {
     systems.register_update_system(std::make_unique<SpawnNewCars>());
     systems.register_update_system(std::make_unique<UpdateCarUpgrades>());
     systems.register_update_system(std::make_unique<RevealFogOfWar>());
+    systems.register_update_system(
+        std::make_unique<AutoRevealUnreachableFog>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();
