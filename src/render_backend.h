@@ -54,4 +54,8 @@ inline void BeginScissorMode(int x, int y, int width, int height) {
 }
 
 inline void EndScissorMode() { raylib::EndScissorMode(); }
+
+inline void SetTextureFilter(raylib::Texture2D texture, int filter) {
+  raylib::SetTextureFilter(texture, filter);
+}
 } // namespace render_backend

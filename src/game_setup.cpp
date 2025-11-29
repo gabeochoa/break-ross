@@ -51,6 +51,8 @@ void setup_game() {
         "images/photos", "test_photo_500x500.png");
     photo_reveal->photo_texture =
         render_backend::LoadTexture(photo_path.string().c_str());
+    render_backend::SetTextureFilter(photo_reveal->photo_texture,
+                                     raylib::TEXTURE_FILTER_BILINEAR);
     photo_reveal->is_loaded = true;
   }
 
@@ -64,7 +66,7 @@ void setup_game() {
   make_ball(vec2{screen_width / 2.0f, screen_height / 2.0f},
             vec2{200.0f, 200.0f}, radius, shop->ball_damage);
 
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     make_ball(vec2{screen_width / 2.0f + i * 10.0f, screen_height / 2.0f},
               vec2{200.0f, 200.0f}, radius, shop->ball_damage);
   }

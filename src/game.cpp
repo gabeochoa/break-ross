@@ -10,12 +10,12 @@
 #include "settings.h"
 #include "systems/BallPhysics.h"
 #include "systems/HandleCollisions.h"
+#include "systems/RebuildPhotoReveal.h"
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
 #include "systems/RenderFPS.h"
 #include "systems/RenderGameUI.h"
 #include "systems/RenderLetterboxBars.h"
-#include "systems/RebuildPhotoReveal.h"
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderSystemHelpers.h"
@@ -62,7 +62,8 @@ void game() {
 
     systems.register_fixed_update_system(std::make_unique<BallPhysics>());
     systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
-    systems.register_fixed_update_system(std::make_unique<RebuildPhotoReveal>());
+    systems.register_fixed_update_system(
+        std::make_unique<RebuildPhotoReveal>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();
