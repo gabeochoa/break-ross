@@ -5,6 +5,7 @@
 #include "../game_constants.h"
 #include "../render_backend.h"
 #include <afterhours/ah.h>
+#include <bitset>
 #include <vector>
 
 namespace {
@@ -13,8 +14,8 @@ inline int grid_index(int grid_x, int grid_y) {
 }
 
 inline int find_rect_width(const BrickGrid &brick_grid,
-                           std::vector<bool> &processed, int grid_x,
-                           int grid_y) {
+                           std::bitset<game_constants::GRID_SIZE> &processed,
+                           int grid_x, int grid_y) {
   int width = 1;
   while (grid_x + width < game_constants::GRID_WIDTH &&
          brick_grid.has_brick(grid_x + width, grid_y) &&
@@ -25,8 +26,8 @@ inline int find_rect_width(const BrickGrid &brick_grid,
 }
 
 inline int find_rect_height(const BrickGrid &brick_grid,
-                            std::vector<bool> &processed, int grid_x,
-                            int grid_y, int rect_width) {
+                            std::bitset<game_constants::GRID_SIZE> &processed,
+                            int grid_x, int grid_y, int rect_width) {
   int height = 1;
   while (grid_y + height < game_constants::GRID_HEIGHT) {
     bool can_extend = true;
@@ -45,9 +46,10 @@ inline int find_rect_height(const BrickGrid &brick_grid,
   return height;
 }
 
-inline void mark_rect_as_processed(std::vector<bool> &processed, int grid_x,
-                                   int grid_y, int rect_width,
-                                   int rect_height) {
+inline void
+mark_rect_as_processed(std::bitset<game_constants::GRID_SIZE> &processed,
+                       int grid_x, int grid_y, int rect_width,
+                       int rect_height) {
   for (int y = 0; y < rect_height; ++y) {
     for (int x = 0; x < rect_width; ++x) {
       processed[grid_index(grid_x + x, grid_y + y)] = true;
@@ -65,27 +67,46 @@ inline void render_merged_rect(int grid_x, int grid_y, int rect_width,
 }
 } // namespace
 
+inline void rebuild_brick_rects_cache(BrickGrid &brick_grid) {
+  brick_grid.cached_rects.clear();
+  std::bitset<game_constants::GRID_SIZE> processed;
+
+  for (int grid_y = 0; grid_y < game_constants::GRID_HEIGHT; ++grid_y) {
+    for (int grid_x = 0; grid_x < game_constants::GRID_WIDTH; ++grid_x) {
+      if (processed[grid_index(grid_x, grid_y)] ||
+          !brick_grid.has_brick(grid_x, grid_y)) {
+        continue;
+      }
+
+      int rect_width = find_rect_width(brick_grid, processed, grid_x, grid_y);
+      int rect_height =
+          find_rect_height(brick_grid, processed, grid_x, grid_y, rect_width);
+
+      mark_rect_as_processed(processed, grid_x, grid_y, rect_width,
+                             rect_height);
+
+      MergedBrickRect rect;
+      rect.grid_x = grid_x;
+      rect.grid_y = grid_y;
+      rect.width = rect_width;
+      rect.height = rect_height;
+      brick_grid.cached_rects.push_back(rect);
+    }
+  }
+  brick_grid.rects_dirty = false;
+}
+
 struct RenderBrick : afterhours::System<BrickGrid> {
   virtual void for_each_with(const afterhours::Entity &,
                              const BrickGrid &brick_grid,
                              float) const override {
-    std::vector<bool> processed(game_constants::GRID_SIZE, false);
+    BrickGrid &non_const_grid = const_cast<BrickGrid &>(brick_grid);
+    if (non_const_grid.rects_dirty) {
+      rebuild_brick_rects_cache(non_const_grid);
+    }
 
-    for (int grid_y = 0; grid_y < game_constants::GRID_HEIGHT; ++grid_y) {
-      for (int grid_x = 0; grid_x < game_constants::GRID_WIDTH; ++grid_x) {
-        if (processed[grid_index(grid_x, grid_y)] ||
-            !brick_grid.has_brick(grid_x, grid_y)) {
-          continue;
-        }
-
-        int rect_width = find_rect_width(brick_grid, processed, grid_x, grid_y);
-        int rect_height =
-            find_rect_height(brick_grid, processed, grid_x, grid_y, rect_width);
-
-        mark_rect_as_processed(processed, grid_x, grid_y, rect_width,
-                               rect_height);
-        render_merged_rect(grid_x, grid_y, rect_width, rect_height);
-      }
+    for (const MergedBrickRect &rect : brick_grid.cached_rects) {
+      render_merged_rect(rect.grid_x, rect.grid_y, rect.width, rect.height);
     }
   }
 };

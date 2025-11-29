@@ -13,6 +13,9 @@ struct RenderPhotoReveal : afterhours::System<IsPhotoReveal> {
     if (!photo_reveal.is_loaded) {
       return;
     }
+    if (photo_reveal.revealed_cells.none()) {
+      return;
+    }
 
     const float photo_width = 500.0f;
     const float photo_height = 500.0f;

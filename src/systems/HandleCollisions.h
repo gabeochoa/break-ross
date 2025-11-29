@@ -144,7 +144,6 @@ struct HandleCollisions : afterhours::System<> {
             if (brick_grid->get_health(grid_x, grid_y) <= 0) {
               shop->pixels_collected += 1;
               photo_reveal->set_revealed(grid_x, grid_y);
-              photo_reveal->rebuild_merged_rects();
             }
             goto next_ball;
           }
@@ -157,7 +156,6 @@ struct HandleCollisions : afterhours::System<> {
             if (brick_grid->get_health(grid_x, grid_y) <= 0) {
               shop->pixels_collected += 1;
               photo_reveal->set_revealed(grid_x, grid_y);
-              photo_reveal->rebuild_merged_rects();
             }
             goto next_ball;
           }

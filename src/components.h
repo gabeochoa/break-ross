@@ -67,6 +67,7 @@ struct IsPhotoReveal : afterhours::BaseComponent {
   raylib::Texture2D photo_texture{};
   bool is_loaded{false};
   float reveal_percentage{0.0f};
+  bool merged_rects_dirty{false};
 
   IsPhotoReveal() = default;
   IsPhotoReveal(float cell_size_in) : cell_size(cell_size_in) {}
@@ -84,12 +85,20 @@ struct IsPhotoReveal : afterhours::BaseComponent {
         grid_y >= game_constants::GRID_HEIGHT) {
       return;
     }
-    revealed_cells[grid_y * game_constants::GRID_WIDTH + grid_x] = true;
+    int idx = grid_y * game_constants::GRID_WIDTH + grid_x;
+    if (!revealed_cells[idx]) {
+      revealed_cells[idx] = true;
+      merged_rects_dirty = true;
+    }
   }
 
   void rebuild_merged_rects() {
+    if (!merged_rects_dirty) {
+      return;
+    }
+    merged_rects_dirty = false;
     merged_rects.clear();
-    std::vector<bool> processed(game_constants::GRID_SIZE, false);
+    std::bitset<game_constants::GRID_SIZE> processed;
 
     for (int grid_y = 0; grid_y < game_constants::GRID_HEIGHT; ++grid_y) {
       for (int grid_x = 0; grid_x < game_constants::GRID_WIDTH; ++grid_x) {
@@ -161,8 +170,17 @@ struct IsPhotoReveal : afterhours::BaseComponent {
   }
 };
 
+struct MergedBrickRect {
+  int grid_x;
+  int grid_y;
+  int width;
+  int height;
+};
+
 struct BrickGrid : afterhours::BaseComponent {
   std::array<std::array<uint8_t, 50>, game_constants::GRID_HEIGHT> health_data;
+  mutable std::vector<MergedBrickRect> cached_rects;
+  mutable bool rects_dirty{true};
 
   BrickGrid() {
     for (auto &row : health_data) {
@@ -193,11 +211,13 @@ struct BrickGrid : afterhours::BaseComponent {
     uint8_t inverse_mask = static_cast<uint8_t>(0xF0 >> shift);
     byte =
         (byte & inverse_mask) | static_cast<uint8_t>((health & 0x0F) << shift);
+    rects_dirty = true;
   }
 
   void add_health(int grid_x, int grid_y, short delta) {
     short current = get_health(grid_x, grid_y);
     set_health(grid_x, grid_y, current + delta);
+    rects_dirty = true;
   }
 
   bool has_brick(int grid_x, int grid_y) const {
