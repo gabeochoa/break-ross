@@ -2,137 +2,435 @@
 
 ## High-Level Concept
 
-An incremental game that combines pong and brick breaker mechanics, where players uncover interconnected photos that tell a story and provide upgrades. The game starts at the pixel level and progressively scales up to reveal a massive 20k x 20k photo that tells the complete story.
+An incremental game that combines pong and brick breaker mechanics, where players uncover interconnected photos designed as comic frames that tell a story and provide upgrades. The game starts at the pixel level and progressively scales up to reveal a massive 20k x 20k photo composed of comic frames. Each fully uncovered photo region unlocks a comic frame in the main menu gallery, allowing players to re-read the story they've uncovered.
 
 ### Core Gameplay Loop
 
-1. **Play**: Use pong/brick breaker mechanics to break blocks and score points
-2. **Uncover**: Reveal portions of interconnected photos as you progress
-3. **Upgrade**: Receive upgrades from uncovered photos that make the game faster and more engaging
-4. **Scale**: Progress from pixel-level detail to increasingly larger photo resolutions
-5. **Repeat**: Continue playing to uncover more of the world and story
+1. **Play**: Control a bouncing ball to break blocks and collect pixels
+2. **Collect**: Gather pixels (currency) from broken bricks
+3. **Spend**: Use gold/pixels to purchase upgrades or buy new balls
+4. **Uncover**: Reveal portions of interconnected comic frame photos as you progress
+5. **Unlock Frames**: Fully uncovering a photo region unlocks its comic frame in the gallery
+6. **Scale**: Progress from pixel-level detail to increasingly larger photo resolutions
+7. **Prestige**: Reset map and double speed/size to unlock new comic frames
+8. **Gallery**: Revisit unlocked comic frames in main menu to re-read the story
 
-### Progression Arc
+---
 
-The game begins with a single pixel or very small photo fragment. As players progress, they unlock:
-- Larger photo sections
-- Higher resolution views
-- Faster gameplay mechanics
-- More complex brick patterns
-- Interconnected photo regions that form a larger narrative
+## Development Phases
 
-Eventually, players will have uncovered enough to see the full 20k x 20k photo that reveals the complete story.
+### Phase 1: Core Gameplay Foundation
+**Goal**: Get basic gameplay working with ball control and brick breaking
 
-## Detailed Mechanics
+#### Tasks
+- [ ] **Ball Control System**
+  - Implement player-controlled ball with direct movement
+  - Basic ball physics (velocity, bouncing)
+  - Ball collision detection with walls
+  - Ball rendering
+
+- [ ] **Brick System**
+  - Create brick grid layout
+  - Brick rendering
+  - Basic brick collision detection
+  - Brick destruction on hit
+  - Simple brick patterns
+
+- [ ] **Basic Physics**
+  - Ball-brick collision response
+  - Ball-wall bouncing
+  - Basic physics loop integration
+
+- [ ] **Simple Rendering**
+  - Render ball
+  - Render brick grid
+  - Basic camera/viewport
+  - Clear background
+
+- [ ] **Input System**
+  - Ball movement controls (WASD/Arrow keys)
+  - Basic input handling
+
+**Deliverable**: Playable prototype where player controls a ball that breaks bricks
+
+---
+
+### Phase 2: Economy and Basic Progression
+**Goal**: Add pixel collection, currency system, and basic upgrades
+
+#### Tasks
+- [ ] **Pixel Collection System**
+  - Pixels drop from broken bricks
+  - Pixel rendering (visual representation)
+  - Pixel collection by player ball (proximity-based)
+  - Pixel collection range/radius
+
+- [ ] **Currency System**
+  - Pixel counter/display
+  - Currency tracking
+  - UI for displaying pixel count
+
+- [ ] **Basic Upgrade Shop**
+  - Shop UI/menu
+  - Purchase upgrades with pixels
+  - Basic upgrade types:
+    - Ball speed increase
+    - Ball control improvement
+    - Collection range increase
+  - Upgrade cost scaling
+
+- [ ] **Upgrade Application**
+  - Apply upgrades to gameplay
+  - Persist upgrades (in-memory for now)
+
+**Deliverable**: Functional economy where breaking bricks earns pixels that can be spent on upgrades
+
+---
+
+### Phase 3: Photo Uncovering System (Basic - 500×500)
+**Goal**: Implement basic photo reveal system at small scale
+
+#### Tasks
+- [ ] **Photo Loading**
+  - Load 500×500 test photo
+  - Simple texture loading with Raylib
+  - Photo rendering as background
+
+- [ ] **Reveal Tracking**
+  - Track which regions are revealed (simple boolean grid or bitmap)
+  - Reveal state data structure
+  - Mark regions as revealed when bricks are broken
+
+- [ ] **Basic Reveal Rendering**
+  - Render only revealed portions of photo
+  - Use RenderTexture2D or masking approach
+  - Simple reveal visualization
+
+- [ ] **Reveal Mechanics**
+  - Uncover photo regions based on brick destruction
+  - Calculate reveal percentage
+  - Visual feedback for reveals
+
+- [ ] **Test Photo Generation**
+  - Create simple Python script to generate 500×500 test images
+  - Script location: `scripts/generate_photos.py`
+  - Generate basic test patterns
+
+**Deliverable**: Working photo uncover system at 500×500 scale
+
+---
+
+### Phase 4: Advanced Gameplay Features
+**Goal**: Add health system, powerups, multiple balls, and combo system
+
+#### Tasks
+- [ ] **Brick Health System**
+  - Health calculation based on distance from spawn
+  - Health tracking per brick
+  - Multiple hits required to break high-health bricks
+  - Health visualization (color coding, health bars, or damage states)
+
+- [ ] **Health Visualization**
+  - Color coding system (green → yellow → orange → red)
+  - Optional: Health bars, damage states, crack patterns
+  - Visual feedback for damage
+
+- [ ] **Multiple Balls System**
+  - Purchase additional autonomous balls
+  - Autonomous ball AI (bouncing, brick breaking)
+  - Ball management system
+  - Render multiple balls
+
+- [ ] **Combo System**
+  - Track consecutive brick breaks
+  - Combo multiplier for pixel collection
+  - Combo decay over time
+  - Combo display/UI
+
+- [ ] **Basic Powerups (Temporary)**
+  - Powerup drops from special bricks
+  - Speed boost powerup
+  - Magnet mode powerup
+  - Powerup duration timers
+  - Powerup visual indicators
+
+- [ ] **Special Bricks**
+  - Different brick types with varying pixel values
+  - Rare bricks that drop powerups
+  - Brick variety system
+
+**Deliverable**: Enhanced gameplay with health, combos, multiple balls, and powerups
+
+---
+
+### Phase 5: Photo System (Advanced - Tile Pyramid)
+**Goal**: Implement Google Maps-style tile system for large-scale photos
+
+#### Tasks
+- [ ] **Tile System Architecture**
+  - Design TileKey and PhotoTile data structures
+  - Tile cache system (std::map)
+  - Viewport calculation system
+  - Tile coordinate system
+
+- [ ] **Zoom Level System**
+  - Implement zoom level 0 (overview)
+  - Zoom level calculation
+  - Zoom level switching
+  - For 500×500: Simple single-texture approach
+  - For larger sizes: Multi-level tile pyramid
+
+- [ ] **Tile Loading System**
+  - On-demand tile loading
+  - Tile file structure/organization
+  - Load tiles from disk or generate from source
+  - Tile caching in memory
+
+- [ ] **Viewport-Based Rendering**
+  - Calculate visible tiles based on viewport
+  - Render only visible tiles
+  - Tile position calculation
+  - Smooth tile rendering
+
+- [ ] **Reveal System Integration**
+  - Track reveal state per tile
+  - Update reveals when bricks break
+  - Render revealed tiles
+  - Partial reveal support (alpha blending or masking)
+
+- [ ] **Memory Management**
+  - Tile cache size limits
+  - Cache eviction (LRU)
+  - Unload distant tiles
+  - Memory optimization
+
+- [ ] **Zoom and Pan**
+  - Zoom controls (mouse wheel, keys)
+  - Pan controls (drag, arrow keys)
+  - Smooth zoom transitions
+  - Camera system with Raylib
+
+**Deliverable**: Scalable tile-based photo system supporting large images
+
+---
+
+### Phase 6: Prestige and Meta Systems
+**Goal**: Add prestige system, statistics, and save/load
+
+#### Tasks
+- [ ] **Prestige System**
+  - Prestige button/UI
+  - Reset map on prestige
+  - Double ball speed on prestige (multiplicative)
+  - Double map size on prestige
+  - Track prestige level
+  - Prestige confirmation dialog
+
+- [ ] **Map Size Scaling**
+  - Dynamic map size based on prestige level
+  - 500×500 → 1000×1000 → 2000×2000 → etc.
+  - Regenerate brick grid for new size
+  - Adjust spawn point and health calculations
+
+- [ ] **Statistics Tracking**
+  - Total pixels collected (lifetime)
+  - Balls purchased
+  - Photos uncovered percentage
+  - Playtime tracking
+  - Prestige count
+  - Statistics UI/display
+
+- [ ] **Save/Load System**
+  - Save game state to file
+  - Load game state from file
+  - Save: pixels, upgrades, prestige level, revealed tiles
+  - Load: restore game state
+  - Auto-save functionality
+
+- [ ] **Progress Persistence**
+  - Save uncovered photo regions
+  - Save upgrade purchases
+  - Save prestige progress
+  - Persist across game sessions
+
+**Deliverable**: Complete prestige system with save/load functionality
+
+---
+
+### Phase 7: Gallery and Main Menu
+**Goal**: Add main menu, gallery system, and visual polish
+
+#### Tasks
+- [ ] **Main Menu**
+  - Main menu screen
+  - Play button (start/continue)
+  - Gallery button
+  - Settings button
+  - Progress display (prestige, frames unlocked)
+
+- [ ] **Comic Frame Gallery**
+  - Gallery UI (scrollable grid)
+  - Frame thumbnails
+  - Unlock status indicators (locked/unlocked)
+  - Frame viewer (full-screen view)
+  - Frame metadata (story text, narrative)
+
+- [ ] **Frame Unlocking System**
+  - Detect 100% photo region completion
+  - Unlock comic frame on completion
+  - Save unlocked frames
+  - Frame persistence across prestiges
+  - Frame organization (chronological)
+
+- [ ] **Visual Polish**
+  - Unlock animations
+  - Upgrade purchase feedback
+  - Milestone celebrations
+  - Progress indicators
+  - UI polish and styling
+
+- [ ] **Settings Menu**
+  - Graphics settings
+  - Audio settings
+  - Control settings
+  - Save/load settings
+
+**Deliverable**: Complete main menu and gallery system
+
+---
+
+### Phase 8: Content Creation and Tools
+**Goal**: Create tools for generating photos and comic frames
+
+#### Tasks
+- [ ] **Photo Generation Script**
+  - Python script: `scripts/generate_photos.py`
+  - Generate test images at various sizes (500×500, 1k×1k, 2k×2k, 4k×4k, etc.)
+  - Create zoom pyramid (Level 0-3)
+  - Output tiles in organized structure: `tiles/zoom{level}/tile_{x}_{y}.png`
+  - Generate reveal masks for testing
+  - Support comic frame generation
+
+- [ ] **Comic Frame Content**
+  - Design comic frame layouts
+  - Create story/narrative content
+  - Generate comic frame images
+  - Organize frames by prestige level
+
+- [ ] **Testing Tools**
+  - Debug visualization tools
+  - Performance profiling
+  - Reveal state visualization
+  - Tile loading visualization
+
+**Deliverable**: Tools for generating game content
+
+---
+
+## Technical Details
 
 ### Gameplay Mechanics
 
-#### Pong Elements
-- **Paddle**: Player-controlled paddle at the bottom of the screen
-- **Ball Physics**: Ball bounces off paddle, walls, and bricks
-- **Ball Control**: Ability to influence ball direction with paddle angle/position
-- **Ball Speed**: Gradually increases as upgrades are unlocked
+#### Ball Control
+- Player directly controls one bouncing ball
+- Direct movement control (not paddle-based)
+- Ball physics: bounces off walls and bricks
+- Can purchase additional autonomous balls
 
-#### Brick Breaker Elements
-- **Breakable Blocks**: Grid of bricks that must be destroyed
-- **Block Patterns**: Various arrangements that create challenge
-- **Block Types**: Different colored/patterned blocks that may have special properties
-- **Power-ups**: Items that drop from certain blocks (optional enhancement)
+#### Brick System
+- Breakable blocks in grid layout
+- Distance-based health (further from spawn = more health)
+- Health visualization: color coding (green → yellow → orange → red)
+- Different brick types with varying pixel values
+- Special bricks drop powerups
 
-#### Hybrid Mechanics
-- **Scoring**: Points earned by breaking bricks
-- **Combo System**: Breaking multiple bricks in sequence increases score multiplier
-- **Ball Management**: May need to manage multiple balls or ball properties
-- **Paddle Upgrades**: Size, speed, special abilities
+#### Economy
+- Pixels drop from broken bricks
+- Player ball collects pixels within range
+- Spend pixels on upgrades or new balls
+- Combo system increases pixel multiplier
+- Combo decays over time
+
+#### Upgrades
+- Ball speed, control, power
+- Pixel collection rate
+- Collection range
+- New balls
+- Automation upgrades (auto-collect, idle progression)
+
+#### Powerups
+**Permanent** (purchased): Ball speed, damage, collection range, multi-ball, auto-collect, etc.
+
+**Temporary** (drops): Speed boost, magnet mode, multi-ball spawn, explosive hits, piercing mode, double pixels, etc.
 
 ### Photo Uncovering System
 
-#### Uncovering Mechanism
-- Photos are revealed based on **score thresholds** or **brick destruction milestones**
-- Each photo section requires a certain amount of progress to unlock
-- Uncovering can be:
-  - **Linear**: Unlock photos in sequence
-  - **Branching**: Choose which photo region to focus on
-  - **Grid-based**: Unlock adjacent photos in a grid pattern
-  - **Interconnected**: Unlock photos that connect to already-revealed areas
+#### Google Maps-Style Tile Pyramid
+- Multiple zoom levels (LOD pyramid)
+- On-demand tile loading
+- Viewport-based rendering
+- Tile caching and memory management
 
-#### Photo Structure
-- **Interconnected World**: Photos form a larger map/world
-- **Story Fragments**: Each photo reveals part of the narrative
-- **Visual Progression**: Early photos are pixelated/low-res, later photos are high-res
-- **Spatial Relationships**: Photos connect to form a cohesive larger image
+**Zoom Levels:**
+- 500×500: Single texture (simple)
+- 1k×1k: Level 0 overview + Level 1 tiles (2×2 grid)
+- 2k×2k: Multi-level pyramid
+- 4k×4k+: Full pyramid (Level 0-3)
 
-#### What Gets Revealed
-- **Story Elements**: Narrative fragments, character moments, plot points
-- **Upgrade Unlocks**: New abilities, speed increases, gameplay enhancements
-- **Visual Rewards**: Beautiful high-resolution photo sections
-- **Progress Indicators**: Show how much of the world has been uncovered
+**Implementation:**
+- TileKey struct (zoom_level, tile_x, tile_y)
+- PhotoTile struct (texture, is_revealed, is_loaded, world_bounds)
+- Tile cache (std::map<TileKey, PhotoTile>)
+- Viewport-based tile loading
+- Reveal tracking per tile
 
-### Progression System
+### Prestige System
+- Resets map and upgrades
+- Doubles ball speed (multiplicative: 2x, 4x, 8x, etc.)
+- Doubles map size (500×500 → 1000×1000 → 2000×2000 → ... → 20k×20k)
+- Each prestige unlocks new comic frames
+- Progress persists across prestiges
 
-#### Resolution Scaling
-- **Start**: Single pixel or 1x1 photo
-- **Early Game**: 10x10, 100x100 pixel photos
-- **Mid Game**: 1k x 1k, 5k x 5k photos
-- **Late Game**: 10k x 10k, 20k x 20k photos
-- **Zoom Mechanics**: Ability to zoom in/out to see different detail levels
+### Gallery System
+- Unlock frames by 100% uncovering photo regions
+- View unlocked frames in main menu gallery
+- Scrollable grid of frame thumbnails
+- Full-screen frame viewer
+- Frames organized chronologically
+- Story continuity across prestige levels
 
-#### Speed Progression
-- **Base Speed**: Slow, methodical gameplay at the start
-- **Upgrade Acceleration**: Each photo unlock increases game speed slightly
-- **Exponential Growth**: Speed increases compound as more photos are uncovered
-- **Pacing**: Game becomes faster and more intense as you progress
+### Raylib Implementation Notes
 
-#### Scale Mechanics
-- **Viewport Scaling**: Screen shows appropriate zoom level for current progression
-- **Detail Levels**: Higher resolution photos show more detail
-- **Performance**: Rendering optimizations for massive photo sizes
-- **Navigation**: Ability to pan around large uncovered photo areas
+**Key Functions:**
+- `LoadImage()` / `LoadTexture()` - Load photos/tiles
+- `DrawTextureRec()` - Draw tile portions
+- `BeginTextureMode()` / `EndTextureMode()` - Render to RenderTexture2D
+- `BeginMode2D()` / `EndMode2D()` - Camera for zoom/pan
+- `BeginScissorMode()` / `EndScissorMode()` - Restrict drawing area
 
-### Upgrade System
+**Performance:**
+- 4k×4k tiles fit within GPU texture limits
+- Cache ~20-50 tiles in memory
+- Viewport culling for rendering
+- Lazy loading and cache eviction
 
-#### Upgrade Types
-- **Ball Speed**: Increases ball velocity
-- **Paddle Size**: Makes paddle larger/easier to control
-- **Ball Power**: Ball breaks multiple bricks or special blocks
-- **Multi-Ball**: Spawn additional balls
-- **Score Multiplier**: Increase points earned
-- **Special Abilities**: Unique powers (magnetic paddle, explosive balls, etc.)
+---
 
-#### Unlock Mechanism
-- **Photo-Based**: Each photo unlock grants a specific upgrade
-- **Milestone Rewards**: Major photo sections unlock significant upgrades
-- **Progressive Unlocks**: Upgrades become more powerful as you progress
-- **Choice System**: Some photos may offer upgrade choices
+## Development Notes
 
-#### Upgrade Impact
-- **Gameplay Speed**: Upgrades make the game faster and more engaging
-- **Difficulty Scaling**: Game becomes more challenging to match increased speed
-- **Player Power**: Feel of progression and growth
-- **Replayability**: Different upgrade paths or optimization strategies
+### Starting Size
+- Begin with 500×500 for testing
+- Scale up progressively: 1k×1k, 2k×2k, etc.
+- Validate performance at each size
 
-### Technical Considerations
+### Testing Strategy
+- Test core mechanics at small scale first
+- Validate tile system before scaling up
+- Performance testing at each size increment
+- Ensure smooth gameplay before adding features
 
-#### Rendering Approach
-- **LOD System**: Level-of-detail rendering for massive photos
-- **Chunking**: Load photo sections on-demand
-- **Texture Streaming**: Efficient loading of high-resolution photo data
-- **Caching**: Cache uncovered photo sections for performance
-
-#### Performance
-- **Optimization**: Efficient rendering of 20k x 20k images
-- **Memory Management**: Smart loading/unloading of photo data
-- **Frame Rate**: Maintain smooth gameplay even with large photos
-- **Progressive Loading**: Load photos as they're uncovered
-
-#### Save/Load System
-- **Progress Persistence**: Save uncovered photos and upgrades
-- **State Management**: Track which photos are revealed
-- **Upgrade Tracking**: Remember all unlocked upgrades
-- **Checkpoint System**: Save progress at key milestones
-
-#### Photo Data
-- **Storage**: Efficient storage format for large photos
-- **Compression**: Compress photo data while maintaining quality
-- **Format**: Choose appropriate image format (PNG, JPEG, custom)
-- **Generation**: How photos are created/generated (pre-made vs procedural)
+### Content Pipeline
+- Python script generates test photos
+- Generate zoom pyramid for tile system
+- Create comic frame content
+- Organize content by prestige level
