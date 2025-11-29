@@ -9,16 +9,6 @@
 #include <afterhours/src/plugins/autolayout.h>
 #include <afterhours/src/plugins/files.h>
 
-static afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
-                                     int damage) {
-  afterhours::Entity &ball = afterhours::EntityHelper::createEntity();
-  ball.addComponent<Transform>(position, velocity,
-                               vec2{radius * 2.0f, radius * 2.0f});
-  ball.enableTag(ColliderTag::Circle);
-  ball.addComponent<CanDamage>(ball.id, damage);
-  return ball;
-}
-
 template <typename Component, typename... Args>
 static void addIfMissing(afterhours::Entity &entity, Args &&...args) {
   if (!entity.has<Component>()) {
@@ -35,6 +25,16 @@ static afterhours::Entity &get_sophie() {
               "before setup_game()");
   }
   return sophie;
+}
+
+afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
+                              int damage) {
+  afterhours::Entity &ball = afterhours::EntityHelper::createEntity();
+  ball.addComponent<Transform>(position, velocity,
+                               vec2{radius * 2.0f, radius * 2.0f});
+  ball.enableTag(ColliderTag::Circle);
+  ball.addComponent<CanDamage>(ball.id, damage);
+  return ball;
 }
 
 void setup_game() {
@@ -63,13 +63,14 @@ void setup_game() {
   float screen_height = static_cast<float>(Settings::get().get_screen_height());
 
   float radius = 10.0f;
-  make_ball(vec2{screen_width / 2.0f, screen_height / 2.0f},
-            vec2{200.0f, 200.0f}, radius, shop->ball_damage);
+  float base_speed = 200.0f;
+  float speed_multiplier = shop->get_ball_speed_multiplier();
+  vec2 initial_velocity = {base_speed * speed_multiplier,
+                           base_speed * speed_multiplier};
+  int damage = shop->get_ball_damage_value();
 
-  for (int i = 0; i < 1000; ++i) {
-    make_ball(vec2{screen_width / 2.0f + i * 10.0f, screen_height / 2.0f},
-              vec2{200.0f, 200.0f}, radius, shop->ball_damage);
-  }
+  make_ball(vec2{screen_width / 2.0f, screen_height / 2.0f}, initial_velocity,
+            radius, damage);
 
   BrickGrid *brick_grid =
       afterhours::EntityHelper::get_singleton_cmp<BrickGrid>();

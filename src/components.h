@@ -48,9 +48,69 @@ struct IsShopManager : afterhours::BaseComponent {
   int ball_damage;
   int pixels_collected;
 
+  int ball_speed_level{0};
+  int ball_damage_level{0};
+  int ball_count{1};
+
+  bool shop_open{false};
+
   IsShopManager() = default;
   IsShopManager(int cost, int damage, int pixels_in)
       : ball_cost(cost), ball_damage(damage), pixels_collected(pixels_in) {}
+
+  int get_upgrade_cost(int base_cost, int level) const {
+    return static_cast<int>(base_cost * std::pow(1.5, level));
+  }
+
+  int get_ball_speed_cost() const {
+    return get_upgrade_cost(50, ball_speed_level);
+  }
+
+  int get_ball_damage_cost() const {
+    return get_upgrade_cost(500, ball_damage_level);
+  }
+
+  int get_new_ball_cost() const {
+    return get_upgrade_cost(100, ball_count - 1);
+  }
+
+  float get_ball_speed_multiplier() const {
+    return 1.0f + (ball_speed_level * 0.2f);
+  }
+
+  int get_ball_damage_value() const {
+    return ball_damage + (ball_damage_level * 1);
+  }
+
+  bool purchase_ball_speed() {
+    int cost = get_ball_speed_cost();
+    if (pixels_collected >= cost) {
+      pixels_collected -= cost;
+      ball_speed_level++;
+      return true;
+    }
+    return false;
+  }
+
+  bool purchase_ball_damage() {
+    int cost = get_ball_damage_cost();
+    if (pixels_collected >= cost) {
+      pixels_collected -= cost;
+      ball_damage_level++;
+      return true;
+    }
+    return false;
+  }
+
+  bool purchase_new_ball() {
+    int cost = get_new_ball_cost();
+    if (pixels_collected >= cost) {
+      pixels_collected -= cost;
+      ball_count++;
+      return true;
+    }
+    return false;
+  }
 };
 
 struct RevealedRect {
