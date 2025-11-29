@@ -6,7 +6,7 @@ An incremental game that combines pong and brick breaker mechanics, where player
 
 ### Core Gameplay Loop
 
-1. **Play**: Control a bouncing ball to break blocks and collect pixels
+1. **Play**: Watch autonomous bouncing balls break blocks and collect pixels
 2. **Collect**: Gather pixels (currency) from broken bricks
 3. **Spend**: Use gold/pixels to purchase upgrades or buy new balls
 4. **Uncover**: Reveal portions of interconnected comic frame photos as you progress
@@ -20,11 +20,11 @@ An incremental game that combines pong and brick breaker mechanics, where player
 ## Development Phases
 
 ### Phase 1: Core Gameplay Foundation
-**Goal**: Get basic gameplay working with ball control and brick breaking
+**Goal**: Get basic gameplay working with autonomous balls and brick breaking
 
 #### Tasks
-- [x] **Ball Control System**
-  - Implement player-controlled ball with direct movement
+- [x] **Ball System**
+  - Implement autonomous bouncing balls
   - Basic ball physics (velocity, bouncing)
   - Ball collision detection with walls
   - Ball rendering
@@ -47,39 +47,27 @@ An incremental game that combines pong and brick breaker mechanics, where player
   - Basic camera/viewport
   - Clear background
 
-- [ ] **Input System**
-  - Ball movement controls (WASD/Arrow keys)
-  - Basic input handling
-
-**Deliverable**: Playable prototype where player controls a ball that breaks bricks
+**Deliverable**: Playable prototype with autonomous balls that break bricks
 
 ---
 
 ### Phase 2: Economy and Basic Progression
-**Goal**: Add pixel collection, currency system, and basic upgrades
+**Goal**: Add currency system and basic upgrades
 
 #### Tasks
-- [ ] **Pixel Collection System**
-  - Pixels drop from broken bricks
-  - Pixel rendering (visual representation)
-  - Pixel collection by player ball (proximity-based)
-  - Pixel collection range/radius
-
 - [x] **Currency System**
   - Pixel counter/display
   - Currency tracking
   - UI for displaying pixel count
 
-- [ ] **Basic Upgrade Shop**
+- [x] **Basic Upgrade Shop**
   - Shop UI/menu
   - Purchase upgrades with pixels
   - Basic upgrade types:
     - Ball speed increase
-    - Ball control improvement
-    - Collection range increase
   - Upgrade cost scaling
 
-- [ ] **Upgrade Application**
+- [x] **Upgrade Application**
   - Apply upgrades to gameplay
   - Persist upgrades (in-memory for now)
 
@@ -331,11 +319,10 @@ An incremental game that combines pong and brick breaker mechanics, where player
 
 ### Gameplay Mechanics
 
-#### Ball Control
-- Player directly controls one bouncing ball
-- Direct movement control (not paddle-based)
+#### Ball System
+- Autonomous bouncing balls
 - Ball physics: bounces off walls and bricks
-- Can purchase additional autonomous balls
+- Can purchase additional balls
 
 #### Brick System
 - Breakable blocks in grid layout
@@ -345,21 +332,18 @@ An incremental game that combines pong and brick breaker mechanics, where player
 - Special bricks drop powerups
 
 #### Economy
-- Pixels drop from broken bricks
-- Player ball collects pixels within range
+- Pixels are earned when bricks are broken
 - Spend pixels on upgrades or new balls
 - Combo system increases pixel multiplier
 - Combo decays over time
 
 #### Upgrades
-- Ball speed, control, power
-- Pixel collection rate
-- Collection range
+- Ball speed, power
 - New balls
 - Automation upgrades (auto-collect, idle progression)
 
 #### Powerups
-**Permanent** (purchased): Ball speed, damage, collection range, multi-ball, auto-collect, etc.
+**Permanent** (purchased): Ball speed, damage, multi-ball, auto-collect, etc.
 
 **Temporary** (drops): Speed boost, magnet mode, multi-ball spawn, explosive hits, piercing mode, double pixels, etc.
 

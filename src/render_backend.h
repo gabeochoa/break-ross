@@ -58,4 +58,47 @@ inline void EndScissorMode() { raylib::EndScissorMode(); }
 inline void SetTextureFilter(raylib::Texture2D texture, int filter) {
   raylib::SetTextureFilter(texture, filter);
 }
+
+inline raylib::Shader LoadShader(const char *vsFileName,
+                                 const char *fsFileName) {
+  return raylib::LoadShader(vsFileName, fsFileName);
+}
+
+inline void UnloadShader(raylib::Shader shader) {
+  raylib::UnloadShader(shader);
+}
+
+inline int GetShaderLocation(raylib::Shader shader, const char *uniformName) {
+  return raylib::GetShaderLocation(shader, uniformName);
+}
+
+inline void SetShaderValue(raylib::Shader shader, int locIndex,
+                           const void *value, int uniformType) {
+  raylib::SetShaderValue(shader, locIndex, value, uniformType);
+}
+
+inline void SetShaderValueTexture(raylib::Shader shader, int locIndex,
+                                  raylib::Texture2D texture) {
+  raylib::SetShaderValueTexture(shader, locIndex, texture);
+}
+
+inline void BeginShaderMode(raylib::Shader shader) {
+  raylib::BeginShaderMode(shader);
+}
+
+inline void EndShaderMode() { raylib::EndShaderMode(); }
+
+inline raylib::Image GenImageColor(int width, int height, raylib::Color color) {
+  return raylib::GenImageColor(width, height, color);
+}
+
+inline raylib::Texture2D LoadTextureFromImage(raylib::Image image) {
+  return raylib::LoadTextureFromImage(image);
+}
+
+inline void UpdateTexture(raylib::Texture2D texture, const void *pixels) {
+  raylib::UpdateTexture(texture, pixels);
+}
+
+inline void UnloadImage(raylib::Image image) { raylib::UnloadImage(image); }
 } // namespace render_backend

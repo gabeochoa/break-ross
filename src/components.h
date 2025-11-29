@@ -241,6 +241,8 @@ struct BrickGrid : afterhours::BaseComponent {
   std::array<std::array<uint8_t, 50>, game_constants::GRID_HEIGHT> health_data;
   mutable std::vector<MergedBrickRect> cached_rects;
   mutable bool rects_dirty{true};
+  mutable raylib::Texture2D health_texture{};
+  mutable bool health_texture_dirty{true};
 
   BrickGrid() {
     for (auto &row : health_data) {
@@ -272,12 +274,12 @@ struct BrickGrid : afterhours::BaseComponent {
     byte =
         (byte & inverse_mask) | static_cast<uint8_t>((health & 0x0F) << shift);
     rects_dirty = true;
+    health_texture_dirty = true;
   }
 
   void add_health(int grid_x, int grid_y, short delta) {
     short current = get_health(grid_x, grid_y);
     set_health(grid_x, grid_y, current + delta);
-    rects_dirty = true;
   }
 
   bool has_brick(int grid_x, int grid_y) const {

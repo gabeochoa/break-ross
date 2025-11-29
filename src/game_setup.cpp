@@ -8,6 +8,8 @@
 #include <afterhours/ah.h>
 #include <afterhours/src/plugins/autolayout.h>
 #include <afterhours/src/plugins/files.h>
+#include <algorithm>
+#include <cmath>
 
 template <typename Component, typename... Args>
 static void addIfMissing(afterhours::Entity &entity, Args &&...args) {
@@ -75,9 +77,18 @@ void setup_game() {
   BrickGrid *brick_grid =
       afterhours::EntityHelper::get_singleton_cmp<BrickGrid>();
   if (brick_grid) {
+    int spawn_col = game_constants::world_to_grid_x(screen_width / 2.0f);
+    int spawn_row = game_constants::world_to_grid_y(screen_height / 2.0f);
+
     for (int row = 0; row < game_constants::GRID_HEIGHT; ++row) {
       for (int col = 0; col < game_constants::GRID_WIDTH; ++col) {
-        brick_grid->set_health(col, row, 1);
+        float dx = static_cast<float>(col - spawn_col);
+        float dy = static_cast<float>(row - spawn_row);
+        float distance = std::sqrt(dx * dx + dy * dy);
+
+        int health = static_cast<int>(
+            std::max(1.0f, std::min(15.0f, 1.0f + distance * 0.1f)));
+        brick_grid->set_health(col, row, static_cast<short>(health));
       }
     }
   }
