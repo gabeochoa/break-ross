@@ -80,69 +80,7 @@ struct MazeTraversal
     float remaining_on_segment =
         (1.0f - road_following.progress_along_segment) * segment_length;
 
-    if (distance_to_travel >= remaining_on_segment) {
-      // Reached end of segment, select next segment
-      transform.position = segment_end;
-      road_following.progress_along_segment = 0.0f;
-
-      vec2 current_end = segment_end;
-      // Connection tolerance should match road width (square size = 12.0)
-      // Use a small tolerance to only connect segments that actually meet
-      float connection_tolerance = 15.0f; // Slightly larger than square size
-      size_t next_segment_index = SIZE_MAX;
-      bool next_reverse_direction = false;
-
-      // Select next segment based on algorithm or forced direction mode
-      if (road_following.forced_direction_steps > 0) {
-        // Forced direction mode: choose segment that best matches forced
-        // direction
-        select_next_forced_direction(road_following, road_network, current_end,
-                                     connection_tolerance, next_segment_index,
-                                     next_reverse_direction);
-        if (next_segment_index != SIZE_MAX) {
-          road_following.forced_direction_steps--;
-          if (road_following.forced_direction_steps == 0) {
-            // Check if we found a new segment (will be marked as visited in
-            // next frame)
-            bool found_new = !road_network->is_visited(next_segment_index);
-            if (found_new) {
-              road_following.segments_without_reveal = 0; // Reset counter
-              // forced_direction_attempts will be reset when segment is marked
-              // as visited
-            }
-          }
-        }
-      } else {
-        // Normal algorithm selection
-        if (road_following.current_algorithm == MazeAlgorithm::WallFollower) {
-          select_next_wall_follower(road_following, road_network, current_end,
-                                    connection_tolerance, next_segment_index,
-                                    next_reverse_direction);
-        } else if (road_following.current_algorithm == MazeAlgorithm::Tremaux) {
-          // TODO: Implement Tremaux
-          select_next_wall_follower(road_following, road_network, current_end,
-                                    connection_tolerance, next_segment_index,
-                                    next_reverse_direction);
-        } else if (road_following.current_algorithm == MazeAlgorithm::DFS) {
-          // TODO: Implement DFS
-          select_next_wall_follower(road_following, road_network, current_end,
-                                    connection_tolerance, next_segment_index,
-                                    next_reverse_direction);
-        } else {
-          // AStar - TODO: Implement
-          select_next_wall_follower(road_following, road_network, current_end,
-                                    connection_tolerance, next_segment_index,
-                                    next_reverse_direction);
-        }
-      }
-
-      if (next_segment_index != SIZE_MAX) {
-        second_last_segment_index = last_segment_index;
-        last_segment_index = road_following.current_segment_index;
-        road_following.current_segment_index = next_segment_index;
-        road_following.reverse_direction = next_reverse_direction;
-      }
-    } else {
+    if (distance_to_travel < remaining_on_segment) {
       // Continue along current segment
       road_following.progress_along_segment +=
           distance_to_travel / segment_length;
@@ -150,6 +88,55 @@ struct MazeTraversal
           segment_start.x + road_following.progress_along_segment * direction.x;
       transform.position.y =
           segment_start.y + road_following.progress_along_segment * direction.y;
+      road_following.last_position = transform.position;
+      transform.velocity.x = normalized_x * road_following.speed;
+      transform.velocity.y = normalized_y * road_following.speed;
+      return;
+    }
+
+    // Reached end of segment, select next segment
+    transform.position = segment_end;
+    road_following.progress_along_segment = 0.0f;
+
+    vec2 current_end = segment_end;
+    // Connection tolerance should match road width (square size = 12.0)
+    // Use a small tolerance to only connect segments that actually meet
+    float connection_tolerance = 15.0f; // Slightly larger than square size
+    size_t next_segment_index = SIZE_MAX;
+    bool next_reverse_direction = false;
+
+    // Select next segment based on algorithm or forced direction mode
+    if (road_following.forced_direction_steps > 0) {
+      // Forced direction mode: choose segment that best matches forced
+      // direction
+      select_next_forced_direction(road_following, road_network, current_end,
+                                   connection_tolerance, next_segment_index,
+                                   next_reverse_direction);
+      if (next_segment_index != SIZE_MAX) {
+        road_following.forced_direction_steps--;
+        if (road_following.forced_direction_steps == 0) {
+          // Check if we found a new segment (will be marked as visited in
+          // next frame)
+          bool found_new = !road_network->is_visited(next_segment_index);
+          if (found_new) {
+            road_following.segments_without_reveal = 0; // Reset counter
+            // forced_direction_attempts will be reset when segment is marked
+            // as visited
+          }
+        }
+      }
+    } else {
+      // Normal algorithm selection - all algorithms currently use wall follower
+      select_next_wall_follower(road_following, road_network, current_end,
+                                connection_tolerance, next_segment_index,
+                                next_reverse_direction);
+    }
+
+    if (next_segment_index != SIZE_MAX) {
+      second_last_segment_index = last_segment_index;
+      last_segment_index = road_following.current_segment_index;
+      road_following.current_segment_index = next_segment_index;
+      road_following.reverse_direction = next_reverse_direction;
     }
 
     road_following.last_position = transform.position;
@@ -187,10 +174,11 @@ private:
                         current_end.y - current_start.y};
     float current_dir_len = std::sqrt(current_dir.x * current_dir.x +
                                       current_dir.y * current_dir.y);
-    if (current_dir_len > 0.001f) {
-      current_dir.x /= current_dir_len;
-      current_dir.y /= current_dir_len;
+    if (current_dir_len <= 0.001f) {
+      return;
     }
+    current_dir.x /= current_dir_len;
+    current_dir.y /= current_dir_len;
 
     // Collect valid candidates with their angles
     struct Candidate {
@@ -239,12 +227,13 @@ private:
           (cand_end.x - current_end.x) * (cand_end.x - current_end.x) +
           (cand_end.y - current_end.y) * (cand_end.y - current_end.y));
 
-      if (dist_to_start < connection_tolerance ||
-          dist_to_end < connection_tolerance) {
-        bool is_unvisited = !road_network->is_visited(connected_seg);
-        candidates.push_back({connected_seg, use_reverse, angle, is_unvisited,
-                              std::min(dist_to_start, dist_to_end)});
+      if (dist_to_start >= connection_tolerance &&
+          dist_to_end >= connection_tolerance) {
+        continue;
       }
+      bool is_unvisited = !road_network->is_visited(connected_seg);
+      candidates.push_back({connected_seg, use_reverse, angle, is_unvisited,
+                            std::min(dist_to_start, dist_to_end)});
     }
 
     if (candidates.empty()) {
@@ -358,16 +347,18 @@ private:
           (cand_end.x - current_end.x) * (cand_end.x - current_end.x) +
           (cand_end.y - current_end.y) * (cand_end.y - current_end.y));
 
-      if (dist_to_start < connection_tolerance ||
-          dist_to_end < connection_tolerance) {
-        // Calculate dot product with forced direction
-        float dot = forced_dir.x * cand_dir.x + forced_dir.y * cand_dir.y;
-        if (dot > best_dot) {
-          best_dot = dot;
-          best_seg = connected_seg;
-          best_reverse = use_reverse;
-        }
+      if (dist_to_start >= connection_tolerance &&
+          dist_to_end >= connection_tolerance) {
+        continue;
       }
+      // Calculate dot product with forced direction
+      float dot = forced_dir.x * cand_dir.x + forced_dir.y * cand_dir.y;
+      if (dot <= best_dot) {
+        continue;
+      }
+      best_dot = dot;
+      best_seg = connected_seg;
+      best_reverse = use_reverse;
     }
 
     // If no segment found (all excluded), do a second pass allowing excluded
@@ -401,22 +392,25 @@ private:
             (cand_end.x - current_end.x) * (cand_end.x - current_end.x) +
             (cand_end.y - current_end.y) * (cand_end.y - current_end.y));
 
-        if (dist_to_start < connection_tolerance ||
-            dist_to_end < connection_tolerance) {
-          float dot = forced_dir.x * cand_dir.x + forced_dir.y * cand_dir.y;
-          if (dot > best_dot) {
-            best_dot = dot;
-            best_seg = connected_seg;
-            best_reverse = use_reverse;
-          }
+        if (dist_to_start >= connection_tolerance &&
+            dist_to_end >= connection_tolerance) {
+          continue;
         }
+        float dot = forced_dir.x * cand_dir.x + forced_dir.y * cand_dir.y;
+        if (dot <= best_dot) {
+          continue;
+        }
+        best_dot = dot;
+        best_seg = connected_seg;
+        best_reverse = use_reverse;
       }
     }
 
-    if (best_seg != SIZE_MAX) {
-      next_segment_index = best_seg;
-      next_reverse_direction = best_reverse;
+    if (best_seg == SIZE_MAX) {
+      return;
     }
+    next_segment_index = best_seg;
+    next_reverse_direction = best_reverse;
   }
 };
 
