@@ -232,7 +232,18 @@ prof-sample: output
 	sample $$PID 10 -f $$PROFILE_FILE; \
 	kill $$PID 2>/dev/null || true; \
 	echo "Profile saved to $$PROFILE_FILE"
+
+prof-small: output
+	@PROFILE_FILE="profile_$$(date +%Y%m%d_%H%M%S).txt"; \
+	echo "Quick profiling with 'sample' (5 seconds)..."; \
+	./$(MAIN_EXE) & \
+	PID=$$!; \
+	sleep 1; \
+	sample $$PID 5 -f $$PROFILE_FILE; \
+	kill $$PID 2>/dev/null || true; \
+	echo "Profile saved to $$PROFILE_FILE"; \
+	echo "View with: cat $$PROFILE_FILE | head -100"
 endif
 
-.PHONY: count countall cppcheck prof prof-sample
+.PHONY: count countall cppcheck prof prof-sample prof-small
 

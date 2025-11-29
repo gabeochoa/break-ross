@@ -2,6 +2,7 @@
 **/x64/.vs/*
 *.dSYM
 .cache/
+cache/
 .DS_Store
 **/.vs
 game.obj

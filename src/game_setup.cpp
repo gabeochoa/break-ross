@@ -10,6 +10,7 @@
 #include <afterhours/src/plugins/files.h>
 #include <algorithm>
 #include <cmath>
+#include <nlohmann/json.hpp>
 
 template <typename Component, typename... Args>
 static void addIfMissing(afterhours::Entity &entity, Args &&...args) {
@@ -39,12 +40,61 @@ afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
   return ball;
 }
 
-afterhours::Entity &make_square(vec2 position, float size, float speed) {
+afterhours::Entity &make_square(vec2 position, float size, float speed,
+                                size_t initial_segment_index) {
   afterhours::Entity &square = afterhours::EntityHelper::createEntity();
   square.addComponent<Transform>(position, vec2{0.0f, 0.0f}, vec2{size, size});
   square.enableTag(ColliderTag::Square);
-  square.addComponent<RoadFollowing>(speed);
+  RoadFollowing &road_following = square.addComponent<RoadFollowing>(speed);
+  road_following.current_segment_index = initial_segment_index;
   return square;
+}
+
+static bool
+load_road_network_from_json(RoadNetwork &road_network,
+                            const std::filesystem::path &json_path) {
+  std::ifstream ifs(json_path);
+  if (!ifs.is_open()) {
+    return false;
+  }
+
+  try {
+    nlohmann::json j;
+    ifs >> j;
+    ifs.close();
+
+    if (!j.contains("segments") || !j["segments"].is_array()) {
+      return false;
+    }
+
+    road_network.segments.clear();
+    for (const auto &seg_json : j["segments"]) {
+      if (!seg_json.contains("start") || !seg_json.contains("end")) {
+        continue;
+      }
+
+      RoadSegment segment;
+      segment.start.x = seg_json["start"]["x"].get<float>();
+      segment.start.y = seg_json["start"]["y"].get<float>();
+      segment.end.x = seg_json["end"]["x"].get<float>();
+      segment.end.y = seg_json["end"]["y"].get<float>();
+
+      if (seg_json.contains("width")) {
+        segment.width = seg_json["width"].get<float>();
+      } else {
+        segment.width = 2.0f;
+      }
+
+      road_network.segments.push_back(segment);
+    }
+
+    road_network.visited_segments.resize(road_network.segments.size(), false);
+    road_network.is_loaded = true;
+    return true;
+  } catch (const std::exception &e) {
+    log_error("Failed to parse road network JSON: %s", e.what());
+    return false;
+  }
 }
 
 static void create_simple_road_network(RoadNetwork &road_network) {
@@ -111,20 +161,55 @@ void setup_game() {
   RoadNetwork *road_network =
       afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
   if (road_network && !road_network->is_loaded) {
-    create_simple_road_network(*road_network);
+    std::filesystem::path nyc_roads_path =
+        afterhours::files::get_resource_path("", "nyc_roads.json");
+    if (!load_road_network_from_json(*road_network, nyc_roads_path)) {
+      log_info("NYC roads not found, using procedural road network");
+      create_simple_road_network(*road_network);
+    } else {
+      log_info("Loaded NYC road network with {} segments",
+               road_network->segments.size());
+    }
+
+    // Build connected components
+    // Use tolerance matching road width (square size = 12.0, so ~15.0 for
+    // connections)
+    if (road_network && !road_network->segments.empty()) {
+      road_network->build_connected_components(15.0f);
+      if (!road_network->segments.empty()) {
+        road_network->current_component_id = road_network->get_component_id(0);
+        log_info("Built {} connected components, starting in component {}",
+                 road_network->components.size(),
+                 road_network->current_component_id);
+      }
+    }
   }
 
   float square_size = 12.0f;
-  // TODO start slower
-  float square_speed = 1000.0f;
+  float square_speed = 250.0f;
 
   vec2 square_start_position{0.0f, 0.0f};
+  size_t initial_segment_index = 0;
   if (road_network && !road_network->segments.empty()) {
-    square_start_position = road_network->segments[0].start;
+    // For debugging: spawn near the problematic spot (segment 745)
+    // If segment 745 exists, use it; otherwise fall back to segment 0
+    size_t debug_segment = 745;
+    if (debug_segment < road_network->segments.size()) {
+      square_start_position = road_network->segments[debug_segment].start;
+      initial_segment_index = debug_segment;
+      log_info("DEBUG: Spawning square at segment {} (problematic area) - "
+               "position=({:.1f}, {:.1f})",
+               debug_segment, square_start_position.x, square_start_position.y);
+    } else {
+      square_start_position = road_network->segments[0].start;
+      initial_segment_index = 0;
+    }
   } else {
     square_start_position = vec2{game_constants::WORLD_WIDTH * 0.5f,
                                  game_constants::WORLD_HEIGHT * 0.5f};
+    initial_segment_index = 0;
   }
 
-  make_square(square_start_position, square_size, square_speed);
+  make_square(square_start_position, square_size, square_speed,
+              initial_segment_index);
 }

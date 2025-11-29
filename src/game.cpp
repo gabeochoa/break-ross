@@ -11,6 +11,8 @@
 #include "systems/BallPhysics.h"
 #include "systems/HandleCollisions.h"
 #include "systems/HandleShopInput.h"
+#include "systems/LoopDetection.h"
+#include "systems/MazeTraversal.h"
 #include "systems/RebuildPhotoReveal.h"
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
@@ -25,7 +27,6 @@
 #include "systems/RenderSystemHelpers.h"
 #include "systems/RevealFogOfWar.h"
 #include "systems/SpawnNewBalls.h"
-#include "systems/SquarePhysics.h"
 #include "systems/TestSystem.h"
 #include "systems/UpdateBallUpgrades.h"
 #include "testing/test_app.h"
@@ -69,7 +70,8 @@ void game() {
     afterhours::window_manager::register_update_systems(systems);
 
     systems.register_fixed_update_system(std::make_unique<BallPhysics>());
-    systems.register_fixed_update_system(std::make_unique<SquarePhysics>());
+    systems.register_fixed_update_system(std::make_unique<MazeTraversal>());
+    systems.register_fixed_update_system(std::make_unique<LoopDetection>());
     systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
     systems.register_fixed_update_system(
         std::make_unique<RebuildPhotoReveal>());

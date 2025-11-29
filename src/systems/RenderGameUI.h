@@ -106,19 +106,44 @@ private:
         "Ball Damage (Lv " + std::to_string(shop->ball_damage_level) + ")");
 
     item_y += item_spacing;
-    render_shop_button(
+    item_y = render_shop_button(
         shop, shop_x, shop_width, shop_padding, item_y, button_width,
         button_height, font_size, mouse_pos, mouse_clicked,
         shop->get_new_ball_cost(), shop->ball_count,
         [shop]() { shop->purchase_new_ball(); },
         "New Ball (x" + std::to_string(shop->ball_count) + ")");
+
+    item_y += item_spacing;
+    std::string algorithm_name = get_algorithm_name(shop->get_current_algorithm());
+    render_shop_button(
+        shop, shop_x, shop_width, shop_padding, item_y, button_width,
+        button_height, font_size, mouse_pos, mouse_clicked,
+        shop->get_maze_algorithm_cost(), shop->maze_algorithm_level,
+        [shop]() { shop->purchase_maze_algorithm(); },
+        "Maze Algorithm: " + algorithm_name + " (Lv " +
+            std::to_string(shop->maze_algorithm_level) + ")");
+  }
+
+  std::string get_algorithm_name(MazeAlgorithm algo) const {
+    switch (algo) {
+    case MazeAlgorithm::WallFollower:
+      return "Wall Follower";
+    case MazeAlgorithm::Tremaux:
+      return "Tremaux";
+    case MazeAlgorithm::DFS:
+      return "DFS";
+    case MazeAlgorithm::AStar:
+      return "A*";
+    default:
+      return "Unknown";
+    }
   }
 
   float render_shop_button(IsShopManager *shop, float shop_x, float shop_width,
                            float shop_padding, float item_y, float button_width,
                            float button_height, float font_size,
                            raylib::Vector2 mouse_pos, bool mouse_clicked,
-                           int cost, int level_or_count,
+                            int cost, int /* level_or_count */,
                            std::function<void()> purchase_func,
                            const std::string &label) const {
     bool can_afford = shop->pixels_collected >= cost;

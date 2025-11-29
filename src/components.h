@@ -7,6 +7,7 @@
 #include <afterhours/ah.h>
 #include <bitset>
 #include <magic_enum/magic_enum.hpp>
+#include <unordered_map>
 
 struct Transform : afterhours::BaseComponent {
   vec2 position{0.f, 0.f};
@@ -43,6 +44,8 @@ struct CanDamage : afterhours::BaseComponent {
   CanDamage(afterhours::EntityID id_in, int amount_in)
       : id(id_in), amount(amount_in) {}
 };
+
+enum class MazeAlgorithm { WallFollower, Tremaux, DFS, AStar };
 
 struct IsShopManager : afterhours::BaseComponent {
   int ball_cost;
@@ -111,6 +114,34 @@ struct IsShopManager : afterhours::BaseComponent {
       return true;
     }
     return false;
+  }
+
+  int maze_algorithm_level{0};
+
+  int get_maze_algorithm_cost() const {
+    return get_upgrade_cost(200, maze_algorithm_level);
+  }
+
+  bool purchase_maze_algorithm() {
+    int cost = get_maze_algorithm_cost();
+    if (pixels_collected >= cost) {
+      pixels_collected -= cost;
+      maze_algorithm_level++;
+      return true;
+    }
+    return false;
+  }
+
+  MazeAlgorithm get_current_algorithm() const {
+    if (maze_algorithm_level == 0) {
+      return MazeAlgorithm::WallFollower;
+    } else if (maze_algorithm_level == 1) {
+      return MazeAlgorithm::Tremaux;
+    } else if (maze_algorithm_level == 2) {
+      return MazeAlgorithm::DFS;
+    } else {
+      return MazeAlgorithm::AStar;
+    }
   }
 };
 
@@ -299,6 +330,20 @@ struct RoadNetwork : afterhours::BaseComponent {
   std::vector<bool> visited_segments;
   bool is_loaded{false};
 
+  // Connected component tracking
+  std::vector<size_t> component_id; // maps segment index to component ID
+  std::vector<std::vector<size_t>>
+      components; // list of segments in each component
+  std::unordered_map<size_t, size_t> component_sizes; // cache component sizes
+  size_t current_component_id{SIZE_MAX};
+
+  // Precomputed segment connections for fast candidate lookup
+  // For each segment, stores two vectors: [0] = connections from start, [1] =
+  // connections from end Each connection is (connected_segment_index,
+  // use_reverse)
+  std::vector<std::array<std::vector<std::pair<size_t, bool>>, 2>>
+      segment_connections;
+
   RoadNetwork() = default;
 
   void mark_visited(size_t segment_index) {
@@ -327,6 +372,173 @@ struct RoadNetwork : afterhours::BaseComponent {
     static std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<size_t> dist(0, unvisited.size() - 1);
     return unvisited[dist(rng)];
+  }
+
+  void build_connected_components(float connection_tolerance) {
+    if (segments.empty()) {
+      return;
+    }
+
+    component_id.clear();
+    component_id.resize(segments.size(), SIZE_MAX);
+    components.clear();
+    component_sizes.clear();
+    segment_connections.clear();
+    segment_connections.resize(segments.size());
+
+    size_t next_component_id = 0;
+
+    // Build adjacency list and precompute connections
+    std::vector<std::vector<size_t>> adjacency(segments.size());
+
+    for (size_t i = 0; i < segments.size(); ++i) {
+      const RoadSegment &seg_i = segments[i];
+      vec2 seg_i_start = seg_i.start;
+      vec2 seg_i_end = seg_i.end;
+
+      for (size_t j = i + 1; j < segments.size(); ++j) {
+        const RoadSegment &seg_j = segments[j];
+        vec2 seg_j_start = seg_j.start;
+        vec2 seg_j_end = seg_j.end;
+
+        // Check all endpoint combinations
+        float dist_ss = std::sqrt(
+            (seg_i_start.x - seg_j_start.x) * (seg_i_start.x - seg_j_start.x) +
+            (seg_i_start.y - seg_j_start.y) * (seg_i_start.y - seg_j_start.y));
+        float dist_se = std::sqrt(
+            (seg_i_start.x - seg_j_end.x) * (seg_i_start.x - seg_j_end.x) +
+            (seg_i_start.y - seg_j_end.y) * (seg_i_start.y - seg_j_end.y));
+        float dist_es = std::sqrt(
+            (seg_i_end.x - seg_j_start.x) * (seg_i_end.x - seg_j_start.x) +
+            (seg_i_end.y - seg_j_start.y) * (seg_i_end.y - seg_j_start.y));
+        float dist_ee = std::sqrt(
+            (seg_i_end.x - seg_j_end.x) * (seg_i_end.x - seg_j_end.x) +
+            (seg_i_end.y - seg_j_end.y) * (seg_i_end.y - seg_j_end.y));
+
+        if (dist_ss < connection_tolerance || dist_se < connection_tolerance ||
+            dist_es < connection_tolerance || dist_ee < connection_tolerance) {
+          adjacency[i].push_back(j);
+          adjacency[j].push_back(i);
+
+          // Precompute connections from seg_i's END (index 1)
+          // seg_i.end connects to seg_j.start -> use seg_j normally
+          // (reverse=false) seg_i.end connects to seg_j.end -> use seg_j
+          // reversed (reverse=true)
+          if (dist_es < connection_tolerance) {
+            segment_connections[i][1].push_back({j, false});
+          }
+          if (dist_ee < connection_tolerance) {
+            segment_connections[i][1].push_back({j, true});
+          }
+
+          // Precompute connections from seg_i's START (index 0)
+          // seg_i.start connects to seg_j.start -> use seg_j normally
+          // (reverse=false) seg_i.start connects to seg_j.end -> use seg_j
+          // reversed (reverse=true)
+          if (dist_ss < connection_tolerance) {
+            segment_connections[i][0].push_back({j, false});
+          }
+          if (dist_se < connection_tolerance) {
+            segment_connections[i][0].push_back({j, true});
+          }
+
+          // Same for seg_j: connections from seg_j's END
+          if (dist_ee < connection_tolerance) {
+            segment_connections[j][1].push_back({i, true});
+          }
+          if (dist_se < connection_tolerance) {
+            segment_connections[j][1].push_back({i, false});
+          }
+
+          // Connections from seg_j's START
+          if (dist_ss < connection_tolerance) {
+            segment_connections[j][0].push_back({i, false});
+          }
+          if (dist_es < connection_tolerance) {
+            segment_connections[j][0].push_back({i, true});
+          }
+        }
+      }
+    }
+
+    // DFS to find connected components
+    std::vector<bool> visited(segments.size(), false);
+    for (size_t i = 0; i < segments.size(); ++i) {
+      if (!visited[i]) {
+        std::vector<size_t> component;
+        std::vector<size_t> stack;
+        stack.push_back(i);
+        visited[i] = true;
+
+        while (!stack.empty()) {
+          size_t current = stack.back();
+          stack.pop_back();
+          component.push_back(current);
+          component_id[current] = next_component_id;
+
+          for (size_t neighbor : adjacency[current]) {
+            if (!visited[neighbor]) {
+              visited[neighbor] = true;
+              stack.push_back(neighbor);
+            }
+          }
+        }
+
+        components.push_back(component);
+        component_sizes[next_component_id] = component.size();
+        next_component_id++;
+      }
+    }
+  }
+
+  size_t get_component_id(size_t segment_index) const {
+    if (segment_index >= component_id.size()) {
+      return SIZE_MAX;
+    }
+    return component_id[segment_index];
+  }
+
+  size_t get_component_size(size_t comp_id) const {
+    auto it = component_sizes.find(comp_id);
+    if (it != component_sizes.end()) {
+      return it->second;
+    }
+    return 0;
+  }
+
+  size_t get_visited_count_in_component(size_t comp_id) const {
+    if (comp_id >= components.size()) {
+      return 0;
+    }
+    size_t count = 0;
+    for (size_t seg_idx : components[comp_id]) {
+      if (is_visited(seg_idx)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  bool is_component_complete(size_t comp_id) const {
+    if (comp_id >= components.size()) {
+      return true;
+    }
+    size_t total = get_component_size(comp_id);
+    size_t visited = get_visited_count_in_component(comp_id);
+    return total > 0 && visited == total;
+  }
+
+  std::vector<size_t> get_unvisited_in_component(size_t comp_id) const {
+    std::vector<size_t> unvisited;
+    if (comp_id >= components.size()) {
+      return unvisited;
+    }
+    for (size_t seg_idx : components[comp_id]) {
+      if (!is_visited(seg_idx)) {
+        unvisited.push_back(seg_idx);
+      }
+    }
+    return unvisited;
   }
 };
 
@@ -375,6 +587,23 @@ struct RoadFollowing : afterhours::BaseComponent {
   float progress_along_segment{0.0f};
   float speed{100.0f};
   bool reverse_direction{false};
+
+  vec2 last_position{0.0f, 0.0f};
+  size_t segments_without_reveal{0};  // Count consecutive visited segments
+  float forced_direction_timer{0.0f}; // Timer for forced direction mode
+  size_t forced_direction_steps{0};   // Steps remaining in forced direction
+  vec2 forced_direction{0.0f, 0.0f}; // Direction to maintain during forced mode
+  size_t forced_direction_attempts{
+      0}; // Count how many times we've tried forced direction
+  MazeAlgorithm current_algorithm{MazeAlgorithm::WallFollower};
+
+  static constexpr size_t LOOP_DETECTION_THRESHOLD =
+      10; // Consecutive visited segments before loop detected (increased)
+  static constexpr size_t FORCED_DIRECTION_STEPS =
+      20; // Steps to force direction when breaking loop (increased)
+  static constexpr size_t MAX_FORCED_DIRECTION_ATTEMPTS =
+      5; // Max forced direction attempts before jumping to unvisited segment
+         // (increased)
 
   RoadFollowing() = default;
   RoadFollowing(float speed_in) : speed(speed_in) {}
