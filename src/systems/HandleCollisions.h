@@ -2,36 +2,34 @@
 
 #include "../components.h"
 #include "../eq.h"
+#include "../game_constants.h"
+#include "../log.h"
 #include <afterhours/ah.h>
 #include <algorithm>
 #include <cmath>
 
 namespace {
-bool is_ball_inside_brick(vec2 ball_center, float brick_left, float brick_right,
-                          float brick_top, float brick_bottom) {
+bool is_ball_inside_brick_cell(vec2 ball_center, float brick_left,
+                               float brick_right, float brick_top,
+                               float brick_bottom) {
   return ball_center.x > brick_left && ball_center.x < brick_right &&
          ball_center.y > brick_top && ball_center.y < brick_bottom;
 }
 
-bool handle_ball_inside_brick(Transform &ball_transform,
-                              HasHealth &brick_health,
-                              afterhours::Entity &brick_entity, int damage,
-                              vec2 &stored_velocity) {
+bool handle_ball_inside_brick_cell(Transform &ball_transform,
+                                   vec2 &stored_velocity) {
   if (stored_velocity.x == 0.0f && stored_velocity.y == 0.0f) {
     stored_velocity = {200.0f, 200.0f};
   }
   ball_transform.velocity.x = 0.0f;
   ball_transform.velocity.y = 0.0f;
-  brick_health.amount -= damage;
   return true;
 }
 
-bool handle_ball_edge_collision(vec2 ball_center, float ball_radius,
-                                Transform &ball_transform,
-                                HasHealth &brick_health,
-                                afterhours::Entity &brick_entity, int damage,
-                                float brick_left, float brick_right,
-                                float brick_top, float brick_bottom) {
+bool handle_ball_edge_collision_with_cell(vec2 ball_center, float ball_radius,
+                                          Transform &ball_transform,
+                                          float brick_left, float brick_right,
+                                          float brick_top, float brick_bottom) {
   float closest_x = std::max(brick_left, std::min(ball_center.x, brick_right));
   float closest_y = std::max(brick_top, std::min(ball_center.y, brick_bottom));
 
@@ -42,8 +40,6 @@ bool handle_ball_edge_collision(vec2 ball_center, float ball_radius,
   if (distance_sq >= ball_radius * ball_radius) {
     return false;
   }
-
-  brick_health.amount -= damage;
 
   float distance = std::sqrt(distance_sq);
   vec2 normal = {dx / distance, dy / distance};
@@ -64,33 +60,30 @@ void restore_ball_velocity(Transform &ball_transform, vec2 &stored_velocity) {
     ball_transform.velocity = stored_velocity;
   }
 }
-
-bool is_nearby(vec2 ball_center, float radius,
-               const Transform &brick_transform) {
-  float brick_left = brick_transform.position.x;
-  float brick_right = brick_transform.position.x + brick_transform.size.x;
-  float brick_top = brick_transform.position.y;
-  float brick_bottom = brick_transform.position.y + brick_transform.size.y;
-
-  float expanded_left = ball_center.x - radius;
-  float expanded_right = ball_center.x + radius;
-  float expanded_top = ball_center.y - radius;
-  float expanded_bottom = ball_center.y + radius;
-
-  return !(brick_right < expanded_left || brick_left > expanded_right ||
-           brick_bottom < expanded_top || brick_top > expanded_bottom);
-}
 } // namespace
 
 struct HandleCollisions : afterhours::System<> {
   virtual void once(float) override {
-    auto alive_bricks = EQ().whereHasComponent<Transform>()
-                            .whereHasTag(ColliderTag::Rect)
-                            .whereHasComponent<HasHealth>()
-                            .whereLambda([](const afterhours::Entity &e) {
-                              return e.get<HasHealth>().amount > 0;
-                            })
-                            .gen();
+    BrickGrid *brick_grid =
+        afterhours::EntityHelper::get_singleton_cmp<BrickGrid>();
+    if (!brick_grid) {
+      log_error("BrickGrid singleton not found");
+      return;
+    }
+
+    IsShopManager *shop =
+        afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
+    if (!shop) {
+      log_error("IsShopManager singleton not found");
+      return;
+    }
+
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    if (!photo_reveal) {
+      log_error("IsPhotoReveal singleton not found");
+      return;
+    }
 
     auto balls = EQ().whereHasComponent<Transform>()
                      .whereHasTag(ColliderTag::Circle)
@@ -105,50 +98,77 @@ struct HandleCollisions : afterhours::System<> {
       vec2 ball_center = {ball_transform.position.x + ball_radius,
                           ball_transform.position.y + ball_radius};
 
+      int min_grid_x =
+          game_constants::world_to_grid_x(ball_center.x - ball_radius);
+      int max_grid_x =
+          game_constants::world_to_grid_x(ball_center.x + ball_radius);
+      int min_grid_y =
+          game_constants::world_to_grid_y(ball_center.y - ball_radius);
+      int max_grid_y =
+          game_constants::world_to_grid_y(ball_center.y + ball_radius);
+
+      min_grid_x = std::max(0, min_grid_x);
+      max_grid_x = std::min(game_constants::GRID_WIDTH - 1, max_grid_x);
+      min_grid_y = std::max(0, min_grid_y);
+      max_grid_y = std::min(game_constants::GRID_HEIGHT - 1, max_grid_y);
+
       bool ball_inside_any_brick = false;
       vec2 stored_velocity = ball_transform.velocity;
 
-      for (afterhours::Entity &brick_entity : alive_bricks) {
-        Transform &brick_transform = brick_entity.get<Transform>();
+      for (int grid_y = min_grid_y; grid_y <= max_grid_y; ++grid_y) {
+        for (int grid_x = min_grid_x; grid_x <= max_grid_x; ++grid_x) {
+          if (!brick_grid->has_brick(grid_x, grid_y)) {
+            continue;
+          }
 
-        if (!is_nearby(ball_center, ball_radius * 2.0f, brick_transform)) {
-          continue;
-        }
+          vec2 cell_world_pos =
+              game_constants::grid_to_world_pos(grid_x, grid_y);
+          float brick_left = cell_world_pos.x;
+          float brick_right = brick_left + game_constants::BRICK_CELL_SIZE;
+          float brick_top = cell_world_pos.y;
+          float brick_bottom = brick_top + game_constants::BRICK_CELL_SIZE;
 
-        HasHealth &brick_health = brick_entity.get<HasHealth>();
+          if (ball_center.x + ball_radius < brick_left ||
+              ball_center.x - ball_radius > brick_right ||
+              ball_center.y + ball_radius < brick_top ||
+              ball_center.y - ball_radius > brick_bottom) {
+            continue;
+          }
 
-        float brick_left = brick_transform.position.x;
-        float brick_right = brick_transform.position.x + brick_transform.size.x;
-        float brick_top = brick_transform.position.y;
-        float brick_bottom =
-            brick_transform.position.y + brick_transform.size.y;
+          if (is_ball_inside_brick_cell(ball_center, brick_left, brick_right,
+                                        brick_top, brick_bottom)) {
+            ball_inside_any_brick = true;
+            handle_ball_inside_brick_cell(ball_transform, stored_velocity);
+            brick_grid->add_health(grid_x, grid_y,
+                                   static_cast<short>(-ball_damage.amount));
+            if (brick_grid->get_health(grid_x, grid_y) <= 0) {
+              shop->pixels_collected += 1;
+              photo_reveal->set_revealed(grid_x, grid_y);
+              photo_reveal->rebuild_merged_rects();
+            }
+            goto next_ball;
+          }
 
-        if (ball_center.x + ball_radius < brick_left ||
-            ball_center.x - ball_radius > brick_right ||
-            ball_center.y + ball_radius < brick_top ||
-            ball_center.y - ball_radius > brick_bottom) {
-          continue;
-        }
-
-        if (is_ball_inside_brick(ball_center, brick_left, brick_right,
-                                 brick_top, brick_bottom)) {
-          ball_inside_any_brick = true;
-          handle_ball_inside_brick(ball_transform, brick_health, brick_entity,
-                                   ball_damage.amount, stored_velocity);
-          break;
-        }
-
-        if (handle_ball_edge_collision(ball_center, ball_radius, ball_transform,
-                                       brick_health, brick_entity,
-                                       ball_damage.amount, brick_left,
-                                       brick_right, brick_top, brick_bottom)) {
-          break;
+          if (handle_ball_edge_collision_with_cell(
+                  ball_center, ball_radius, ball_transform, brick_left,
+                  brick_right, brick_top, brick_bottom)) {
+            brick_grid->add_health(grid_x, grid_y,
+                                   static_cast<short>(-ball_damage.amount));
+            if (brick_grid->get_health(grid_x, grid_y) <= 0) {
+              shop->pixels_collected += 1;
+              photo_reveal->set_revealed(grid_x, grid_y);
+              photo_reveal->rebuild_merged_rects();
+            }
+            goto next_ball;
+          }
         }
       }
 
       if (!ball_inside_any_brick) {
         restore_ball_velocity(ball_transform, stored_velocity);
       }
+
+    next_ball:;
     }
   }
 };

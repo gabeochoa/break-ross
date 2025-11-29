@@ -9,7 +9,6 @@
 #include "render_backend.h"
 #include "settings.h"
 #include "systems/BallPhysics.h"
-#include "systems/CleanupDeadBricks.h"
 #include "systems/HandleCollisions.h"
 #include "systems/RenderBall.h"
 #include "systems/RenderBrick.h"
@@ -60,9 +59,8 @@ void game() {
     afterhours::input::register_update_systems(systems);
     afterhours::window_manager::register_update_systems(systems);
 
-    systems.register_update_system(std::make_unique<BallPhysics>());
-    systems.register_update_system(std::make_unique<HandleCollisions>());
-    systems.register_update_system(std::make_unique<CleanupDeadBricks>());
+    systems.register_fixed_update_system(std::make_unique<BallPhysics>());
+    systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();

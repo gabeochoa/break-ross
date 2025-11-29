@@ -19,14 +19,6 @@ static afterhours::Entity &make_ball(vec2 position, vec2 velocity, float radius,
   return ball;
 }
 
-static afterhours::Entity &make_brick(vec2 position, vec2 size, int health) {
-  afterhours::Entity &brick = afterhours::EntityHelper::createEntity();
-  brick.addComponent<Transform>(position, vec2{0, 0}, size);
-  brick.enableTag(ColliderTag::Rect);
-  brick.addComponent<HasHealth>(health, health);
-  return brick;
-}
-
 template <typename Component, typename... Args>
 static void addIfMissing(afterhours::Entity &entity, Args &&...args) {
   if (!entity.has<Component>()) {
@@ -50,6 +42,7 @@ void setup_game() {
 
   addIfMissing<IsShopManager>(sophie, 100, 1, 100);
   addIfMissing<IsPhotoReveal>(sophie, game_constants::BRICK_CELL_SIZE);
+  addIfMissing<BrickGrid>(sophie);
 
   IsPhotoReveal *photo_reveal =
       afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
@@ -71,21 +64,18 @@ void setup_game() {
   make_ball(vec2{screen_width / 2.0f, screen_height / 2.0f},
             vec2{200.0f, 200.0f}, radius, shop->ball_damage);
 
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < 100; ++i) {
     make_ball(vec2{screen_width / 2.0f + i * 10.0f, screen_height / 2.0f},
               vec2{200.0f, 200.0f}, radius, shop->ball_damage);
   }
 
-  for (int row = 0; row < game_constants::GRID_HEIGHT; ++row) {
-    for (int col = 0; col < game_constants::GRID_WIDTH; ++col) {
-      float x =
-          game_constants::BRICK_START_X + col * game_constants::BRICK_CELL_SIZE;
-      float y =
-          game_constants::BRICK_START_Y + row * game_constants::BRICK_CELL_SIZE;
-
-      make_brick(vec2{x, y},
-                 vec2{game_constants::BRICK_SIZE, game_constants::BRICK_SIZE},
-                 1);
+  BrickGrid *brick_grid =
+      afterhours::EntityHelper::get_singleton_cmp<BrickGrid>();
+  if (brick_grid) {
+    for (int row = 0; row < game_constants::GRID_HEIGHT; ++row) {
+      for (int col = 0; col < game_constants::GRID_WIDTH; ++col) {
+        brick_grid->set_health(col, row, 1);
+      }
     }
   }
 }

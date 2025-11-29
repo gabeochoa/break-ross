@@ -160,3 +160,47 @@ struct IsPhotoReveal : afterhours::BaseComponent {
     reveal_percentage = get_reveal_percentage();
   }
 };
+
+struct BrickGrid : afterhours::BaseComponent {
+  std::array<std::array<uint8_t, 50>, game_constants::GRID_HEIGHT> health_data;
+
+  BrickGrid() {
+    for (auto &row : health_data) {
+      row.fill(0);
+    }
+  }
+
+  short get_health(int grid_x, int grid_y) const {
+    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
+        grid_y >= game_constants::GRID_HEIGHT) {
+      return 0;
+    }
+    uint8_t byte = health_data[grid_y][grid_x / 2];
+    int shift = (grid_x & 1) * 4;
+    return (byte >> shift) & 0x0F;
+  }
+
+  void set_health(int grid_x, int grid_y, short health) {
+    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
+        grid_y >= game_constants::GRID_HEIGHT) {
+      return;
+    }
+    health =
+        static_cast<short>(std::max(0, std::min(15, static_cast<int>(health))));
+
+    uint8_t &byte = health_data[grid_y][grid_x / 2];
+    int shift = (grid_x & 1) * 4;
+    uint8_t inverse_mask = static_cast<uint8_t>(0xF0 >> shift);
+    byte =
+        (byte & inverse_mask) | static_cast<uint8_t>((health & 0x0F) << shift);
+  }
+
+  void add_health(int grid_x, int grid_y, short delta) {
+    short current = get_health(grid_x, grid_y);
+    set_health(grid_x, grid_y, current + delta);
+  }
+
+  bool has_brick(int grid_x, int grid_y) const {
+    return get_health(grid_x, grid_y) > 0;
+  }
+};
