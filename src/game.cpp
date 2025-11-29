@@ -1,11 +1,17 @@
 #include "game.h"
 
 #include "components.h"
+#include "game_setup.h"
 #include "input_mapping.h"
 #include "log.h"
 #include "preload.h"
 #include "render_backend.h"
 #include "settings.h"
+#include "systems/BallPhysics.h"
+#include "systems/CleanupDeadBricks.h"
+#include "systems/HandleCollisions.h"
+#include "systems/RenderBall.h"
+#include "systems/RenderBrick.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderSystemHelpers.h"
 #include "systems/TestSystem.h"
@@ -49,6 +55,10 @@ void game() {
     afterhours::input::register_update_systems(systems);
     afterhours::window_manager::register_update_systems(systems);
 
+    systems.register_update_system(std::make_unique<BallPhysics>());
+    systems.register_update_system(std::make_unique<HandleCollisions>());
+    systems.register_update_system(std::make_unique<CleanupDeadBricks>());
+
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();
     systems.register_update_system(std::move(test_system));
@@ -56,6 +66,8 @@ void game() {
 
   {
     systems.register_render_system(std::make_unique<BeginWorldRender>());
+    systems.register_render_system(std::make_unique<RenderBrick>());
+    systems.register_render_system(std::make_unique<RenderBall>());
     systems.register_render_system(std::make_unique<EndWorldRender>());
     systems.register_render_system(
         std::make_unique<BeginPostProcessingRender>());
@@ -64,6 +76,8 @@ void game() {
         systems, InputAction::ToggleUILayoutDebug);
     systems.register_render_system(std::make_unique<EndDrawing>());
   }
+
+  setup_game();
 
   while (running && !raylib::WindowShouldClose()) {
     if (raylib::IsKeyPressed(raylib::KEY_ESCAPE)) {
