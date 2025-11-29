@@ -247,6 +247,22 @@ void setup_game() {
         render_backend::LoadTexture(photo_path.string().c_str());
     render_backend::SetTextureFilter(photo_reveal->photo_texture,
                                      raylib::TEXTURE_FILTER_BILINEAR);
+
+    std::filesystem::path vs_path = afterhours::files::get_resource_path(
+        "shaders", "photo_reveal_vertex.glsl");
+    std::filesystem::path fs_path = afterhours::files::get_resource_path(
+        "shaders", "photo_reveal_fragment.glsl");
+    photo_reveal->mask_shader = render_backend::LoadShader(
+        vs_path.string().c_str(), fs_path.string().c_str());
+
+    if (photo_reveal->mask_shader.id != 0) {
+      photo_reveal->mask_shader_mask_loc = render_backend::GetShaderLocation(
+          photo_reveal->mask_shader, "maskTexture");
+      photo_reveal->mask_shader_mask_scale_loc =
+          render_backend::GetShaderLocation(photo_reveal->mask_shader,
+                                            "maskScale");
+    }
+
     photo_reveal->is_loaded = true;
   }
 

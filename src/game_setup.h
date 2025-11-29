@@ -4,9 +4,9 @@
 #include <afterhours/ah.h>
 
 afterhours::Entity &make_car(vec2 position, vec2 velocity, float radius,
-                              int damage);
+                             int damage);
 
 afterhours::Entity &make_square(vec2 position, float size, float speed,
-                                 size_t initial_segment_index = 0);
+                                size_t initial_segment_index = 0);
 
 void setup_game();

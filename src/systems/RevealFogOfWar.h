@@ -9,8 +9,9 @@
 #include <cmath>
 
 struct RevealFogOfWar
-    : afterhours::System<Transform,
-                         afterhours::tags::Any<ColliderTag::Square, ColliderTag::Circle>> {
+    : afterhours::System<
+          Transform,
+          afterhours::tags::Any<ColliderTag::Square, ColliderTag::Circle>> {
   virtual void for_each_with(afterhours::Entity &, Transform &transform,
                              float) override {
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();

@@ -11,14 +11,14 @@
 
 namespace {
 bool is_car_inside_brick_cell(vec2 car_center, float brick_left,
-                               float brick_right, float brick_top,
-                               float brick_bottom) {
+                              float brick_right, float brick_top,
+                              float brick_bottom) {
   return car_center.x > brick_left && car_center.x < brick_right &&
          car_center.y > brick_top && car_center.y < brick_bottom;
 }
 
 bool handle_car_inside_brick_cell(Transform &car_transform,
-                                   vec2 &stored_velocity) {
+                                  vec2 &stored_velocity) {
   if (stored_velocity.x == 0.0f && stored_velocity.y == 0.0f) {
     stored_velocity = {200.0f, 200.0f};
   }
@@ -28,9 +28,9 @@ bool handle_car_inside_brick_cell(Transform &car_transform,
 }
 
 bool handle_car_edge_collision_with_cell(vec2 car_center, float car_radius,
-                                          Transform &car_transform,
-                                          float brick_left, float brick_right,
-                                          float brick_top, float brick_bottom) {
+                                         Transform &car_transform,
+                                         float brick_left, float brick_right,
+                                         float brick_top, float brick_bottom) {
   float closest_x = std::max(brick_left, std::min(car_center.x, brick_right));
   float closest_y = std::max(brick_top, std::min(car_center.y, brick_bottom));
 
@@ -45,8 +45,8 @@ bool handle_car_edge_collision_with_cell(vec2 car_center, float car_radius,
   float distance = std::sqrt(distance_sq);
   vec2 normal = {dx / distance, dy / distance};
 
-  float dot_product = car_transform.velocity.x * normal.x +
-                      car_transform.velocity.y * normal.y;
+  float dot_product =
+      car_transform.velocity.x * normal.x + car_transform.velocity.y * normal.y;
   car_transform.velocity.x -= 2.0f * dot_product * normal.x;
   car_transform.velocity.y -= 2.0f * dot_product * normal.y;
 
@@ -100,7 +100,7 @@ struct HandleCollisions
 
     float car_radius = car_transform.size.x / 2.0f;
     vec2 car_center = {car_transform.position.x + car_radius,
-                        car_transform.position.y + car_radius};
+                       car_transform.position.y + car_radius};
 
     const float grid_end_x =
         game_constants::BRICK_START_X +
@@ -116,14 +116,10 @@ struct HandleCollisions
       return;
     }
 
-    int min_grid_x =
-        game_constants::world_to_grid_x(car_center.x - car_radius);
-    int max_grid_x =
-        game_constants::world_to_grid_x(car_center.x + car_radius);
-    int min_grid_y =
-        game_constants::world_to_grid_y(car_center.y - car_radius);
-    int max_grid_y =
-        game_constants::world_to_grid_y(car_center.y + car_radius);
+    int min_grid_x = game_constants::world_to_grid_x(car_center.x - car_radius);
+    int max_grid_x = game_constants::world_to_grid_x(car_center.x + car_radius);
+    int min_grid_y = game_constants::world_to_grid_y(car_center.y - car_radius);
+    int max_grid_y = game_constants::world_to_grid_y(car_center.y + car_radius);
 
     if (min_grid_x < 0)
       min_grid_x = 0;
@@ -158,11 +154,11 @@ struct HandleCollisions
         }
 
         if (is_car_inside_brick_cell(car_center, brick_left, brick_right,
-                                      brick_top, brick_bottom)) {
+                                     brick_top, brick_bottom)) {
           car_inside_any_brick = true;
           handle_car_inside_brick_cell(car_transform, stored_velocity);
-          cached_brick_grid->add_health(
-              grid_x, grid_y, static_cast<short>(-car_damage.amount));
+          cached_brick_grid->add_health(grid_x, grid_y,
+                                        static_cast<short>(-car_damage.amount));
           if (cached_brick_grid->get_health(grid_x, grid_y) <= 0) {
             cached_shop->pixels_collected += 1;
             cached_photo_reveal->set_revealed(grid_x, grid_y);
@@ -171,10 +167,10 @@ struct HandleCollisions
         }
 
         if (handle_car_edge_collision_with_cell(
-                car_center, car_radius, car_transform, brick_left,
-                brick_right, brick_top, brick_bottom)) {
-          cached_brick_grid->add_health(
-              grid_x, grid_y, static_cast<short>(-car_damage.amount));
+                car_center, car_radius, car_transform, brick_left, brick_right,
+                brick_top, brick_bottom)) {
+          cached_brick_grid->add_health(grid_x, grid_y,
+                                        static_cast<short>(-car_damage.amount));
           if (cached_brick_grid->get_health(grid_x, grid_y) <= 0) {
             cached_shop->pixels_collected += 1;
             cached_photo_reveal->set_revealed(grid_x, grid_y);

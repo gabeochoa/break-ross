@@ -3,6 +3,7 @@
 #include "../components.h"
 #include "../eq.h"
 #include "../game_constants.h"
+#include "../log.h"
 #include "MapRevealSystem.h"
 #include <afterhours/ah.h>
 #include <algorithm>
@@ -15,6 +16,32 @@ struct MazeTraversal
           afterhours::tags::Any<ColliderTag::Square, ColliderTag::Circle>> {
   static size_t last_segment_index;
   static size_t second_last_segment_index;
+
+  static bool detect_loop(const std::vector<size_t> &recent_segments,
+                          size_t next_seg) {
+    if (recent_segments.size() < 4) {
+      return false;
+    }
+
+    for (size_t pattern_len = 2; pattern_len <= recent_segments.size() / 2;
+         ++pattern_len) {
+      bool is_loop = true;
+      for (size_t i = 0; i < pattern_len; ++i) {
+        size_t idx1 = recent_segments.size() - i;
+        size_t idx2 = recent_segments.size() - pattern_len - i;
+        size_t seg1 = (i == 0) ? next_seg : recent_segments[idx1 - 1];
+        if (idx2 >= recent_segments.size() || seg1 != recent_segments[idx2]) {
+          is_loop = false;
+          break;
+        }
+      }
+      if (is_loop && pattern_len >= 3) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   virtual void once(float) override {}
 
@@ -87,6 +114,7 @@ struct MazeTraversal
           segment_start.x + road_following.progress_along_segment * direction.x;
       transform.position.y =
           segment_start.y + road_following.progress_along_segment * direction.y;
+
       road_following.last_position = transform.position;
       transform.velocity.x = normalized_x * road_following.speed;
       transform.velocity.y = normalized_y * road_following.speed;
@@ -132,10 +160,40 @@ struct MazeTraversal
     }
 
     if (next_segment_index != SIZE_MAX) {
+      road_following.segment_history.push_back(
+          road_following.current_segment_index);
+      if (road_following.segment_history.size() >
+          RoadFollowing::MAX_HISTORY_SIZE) {
+        road_following.segment_history.erase(
+            road_following.segment_history.begin());
+      }
+
+      std::vector<size_t> test_history = road_following.segment_history;
+      test_history.push_back(next_segment_index);
+      bool is_loop = detect_loop(test_history, next_segment_index);
+
+      if (is_loop) {
+        size_t random_unvisited = road_network->find_random_unvisited_segment();
+        if (random_unvisited != SIZE_MAX) {
+          log_warn(
+              "MazeTraversal: Loop detected, jumping to unvisited segment {}",
+              random_unvisited);
+          next_segment_index = random_unvisited;
+          next_reverse_direction = false;
+          road_following.segment_history.clear();
+        } else {
+          log_warn("MazeTraversal: Loop detected but no unvisited segments "
+                   "available");
+        }
+      }
+
       second_last_segment_index = last_segment_index;
       last_segment_index = road_following.current_segment_index;
       road_following.current_segment_index = next_segment_index;
       road_following.reverse_direction = next_reverse_direction;
+    } else {
+      log_warn("MazeTraversal: Car stuck at segment {}, no next segment found",
+               road_following.current_segment_index);
     }
 
     road_following.last_position = transform.position;

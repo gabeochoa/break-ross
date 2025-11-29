@@ -17,6 +17,8 @@ struct RenderPhotoReveal : afterhours::System<IsPhotoReveal> {
       return;
     }
 
+    photo_reveal.update_mask_texture();
+
     const float photo_width = 500.0f;
     const float photo_height = 500.0f;
     const float grid_area_width =

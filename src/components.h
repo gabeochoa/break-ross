@@ -2,6 +2,7 @@
 
 #include "game_constants.h"
 #include "log.h"
+#include "render_backend.h"
 #include "rl.h"
 #include "std_include.h"
 #include <afterhours/ah.h>
@@ -54,7 +55,7 @@ struct IsShopManager : afterhours::BaseComponent {
 
   int car_speed_level{0};
   int car_damage_level{0};
-  int car_count{1};
+  int car_count{20};
 
   bool shop_open{false};
 
@@ -167,9 +168,14 @@ struct IsPhotoReveal : afterhours::BaseComponent {
   std::vector<RevealedRect> merged_rects;
   float cell_size;
   raylib::Texture2D photo_texture{};
+  mutable raylib::Texture2D mask_texture{};
+  raylib::Shader mask_shader{};
+  int mask_shader_mask_loc{-1};
+  int mask_shader_mask_scale_loc{-1};
   bool is_loaded{false};
   float reveal_percentage{0.0f};
   bool merged_rects_dirty{false};
+  mutable bool mask_texture_dirty{true};
 
   IsPhotoReveal() = default;
   IsPhotoReveal(float cell_size_in) : cell_size(cell_size_in) {}
@@ -191,7 +197,40 @@ struct IsPhotoReveal : afterhours::BaseComponent {
     if (!revealed_cells[idx]) {
       revealed_cells[idx] = true;
       merged_rects_dirty = true;
+      mask_texture_dirty = true;
     }
+  }
+
+  void update_mask_texture() const {
+    if (!mask_texture_dirty || !is_loaded) {
+      return;
+    }
+    mask_texture_dirty = false;
+
+    std::vector<unsigned char> mask_data(game_constants::GRID_WIDTH *
+                                         game_constants::GRID_HEIGHT * 4);
+    for (int y = 0; y < game_constants::GRID_HEIGHT; ++y) {
+      for (int x = 0; x < game_constants::GRID_WIDTH; ++x) {
+        int idx = y * game_constants::GRID_WIDTH + x;
+        int pixel_idx = idx * 4;
+        unsigned char value =
+            revealed_cells[idx] ? static_cast<unsigned char>(255) : 0;
+        mask_data[pixel_idx] = value;
+        mask_data[pixel_idx + 1] = value;
+        mask_data[pixel_idx + 2] = value;
+        mask_data[pixel_idx + 3] = value;
+      }
+    }
+
+    if (mask_texture.id == 0) {
+      raylib::Image mask_image = render_backend::GenImageColor(
+          game_constants::GRID_WIDTH, game_constants::GRID_HEIGHT,
+          raylib::BLACK);
+      mask_texture = render_backend::LoadTextureFromImage(mask_image);
+      render_backend::UnloadImage(mask_image);
+    }
+
+    render_backend::UpdateTexture(mask_texture, mask_data.data());
   }
 
   void rebuild_merged_rects() {

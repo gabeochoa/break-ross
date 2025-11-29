@@ -57,4 +57,3 @@ struct UpdateCarUpgrades : afterhours::System<IsShopManager> {
     }
   }
 };
-
