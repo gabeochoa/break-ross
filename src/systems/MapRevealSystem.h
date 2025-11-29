@@ -23,6 +23,12 @@ struct MapRevealSystem {
 
     road_network->mark_visited(segment_index);
 
+    IsShopManager *shop =
+        afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
+    if (shop) {
+      shop->pixels_collected += 1;
+    }
+
     if (!fog) {
       return true;
     }
