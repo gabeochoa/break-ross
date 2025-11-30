@@ -15,7 +15,8 @@ struct RenderCar
     raylib::Color car_color = raylib::GREEN;
     if (road_following.forced_direction_steps > 0) {
       car_color = raylib::ORANGE;
-    } else if (road_following.current_algorithm == MazeAlgorithm::WallFollower) {
+    } else if (road_following.current_algorithm ==
+               MazeAlgorithm::WallFollower) {
       car_color = raylib::GREEN;
     } else if (road_following.current_algorithm == MazeAlgorithm::Tremaux) {
       car_color = raylib::BLUE;
@@ -29,4 +30,3 @@ struct RenderCar
                                 car_color);
   }
 };
-

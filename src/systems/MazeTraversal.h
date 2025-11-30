@@ -8,6 +8,7 @@
 #include <afterhours/ah.h>
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <vector>
 
 struct MazeTraversal
@@ -92,6 +93,11 @@ struct MazeTraversal
     bool just_revealed =
         MapRevealSystem::reveal_segment(road_following.current_segment_index);
 
+    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
+    invariant(fog, "FogOfWar singleton not found");
+    float reveal_percentage = fog->get_reveal_percentage();
+    bool prioritize_unvisited = reveal_percentage >= 90.0f;
+
     // Update segments_without_reveal counter
     if (just_revealed) {
       road_following.segments_without_reveal = 0;
@@ -99,6 +105,25 @@ struct MazeTraversal
           0; // Reset when we reveal a new segment
     } else {
       road_following.segments_without_reveal++;
+    }
+
+    // At 90%+, if we've been going through visited segments for too long, jump
+    // to unvisited
+    if (prioritize_unvisited && road_following.segments_without_reveal >= 5) {
+      size_t random_unvisited = road_network->find_random_unvisited_segment();
+      if (random_unvisited != SIZE_MAX) {
+        log_info("MazeTraversal: At 90%+, jumping to unvisited segment {} "
+                 "after {} visited segments",
+                 random_unvisited, road_following.segments_without_reveal);
+        road_following.current_segment_index = random_unvisited;
+        road_following.progress_along_segment = 0.0f;
+        road_following.reverse_direction = false;
+        road_following.segments_without_reveal = 0;
+        road_following.segment_history.clear();
+        const RoadSegment &new_seg = road_network->segments[random_unvisited];
+        transform.position = new_seg.start;
+        return;
+      }
     }
 
     // Move along current segment
@@ -157,6 +182,23 @@ struct MazeTraversal
       select_next_wall_follower(road_following, road_network, current_end,
                                 connection_tolerance, next_segment_index,
                                 next_reverse_direction);
+
+      // At 90%+, if no unvisited segments found at junction, jump to one
+      if (prioritize_unvisited && next_segment_index != SIZE_MAX) {
+        bool next_is_unvisited = !road_network->is_visited(next_segment_index);
+        if (!next_is_unvisited) {
+          size_t random_unvisited =
+              road_network->find_random_unvisited_segment();
+          if (random_unvisited != SIZE_MAX) {
+            log_info("MazeTraversal: At 90%+, no unvisited at junction, "
+                     "jumping to unvisited segment {}",
+                     random_unvisited);
+            next_segment_index = random_unvisited;
+            next_reverse_direction = false;
+            road_following.segment_history.clear();
+          }
+        }
+      }
     }
 
     if (next_segment_index != SIZE_MAX) {
@@ -213,6 +255,11 @@ private:
       return;
     }
 
+    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
+    invariant(fog, "FogOfWar singleton not found");
+    float reveal_percentage = fog->get_reveal_percentage();
+    bool prioritize_unvisited = reveal_percentage >= 90.0f;
+
     // Determine which endpoint we're at: 0 = start, 1 = end
     size_t endpoint_idx = road_following.reverse_direction ? 0 : 1;
     const auto &connections =
@@ -247,12 +294,18 @@ private:
     };
     std::vector<Candidate> candidates;
 
+    std::set<size_t> recent_segments;
+    recent_segments.insert(last_segment_index);
+    recent_segments.insert(second_last_segment_index);
+    for (size_t hist_seg : road_following.segment_history) {
+      recent_segments.insert(hist_seg);
+    }
+
     for (const auto &[connected_seg, use_reverse] : connections) {
       if (connected_seg == current_seg) {
         continue;
       }
-      if (connected_seg == last_segment_index ||
-          connected_seg == second_last_segment_index) {
+      if (recent_segments.find(connected_seg) != recent_segments.end()) {
         continue;
       }
 
@@ -294,7 +347,88 @@ private:
     }
 
     if (candidates.empty()) {
-      return;
+      std::set<size_t> recent_segments_fallback;
+      recent_segments_fallback.insert(last_segment_index);
+      recent_segments_fallback.insert(second_last_segment_index);
+      for (const auto &[connected_seg, use_reverse] : connections) {
+        if (connected_seg == current_seg) {
+          continue;
+        }
+        if (recent_segments_fallback.find(connected_seg) !=
+            recent_segments_fallback.end()) {
+          continue;
+        }
+        const RoadSegment &candidate_seg =
+            road_network->segments[connected_seg];
+        vec2 cand_start = use_reverse ? candidate_seg.end : candidate_seg.start;
+        vec2 cand_end = use_reverse ? candidate_seg.start : candidate_seg.end;
+        vec2 cand_dir = {cand_end.x - cand_start.x, cand_end.y - cand_start.y};
+        float cand_len =
+            std::sqrt(cand_dir.x * cand_dir.x + cand_dir.y * cand_dir.y);
+        if (cand_len < 0.001f) {
+          continue;
+        }
+        cand_dir.x /= cand_len;
+        cand_dir.y /= cand_len;
+        float cross = current_dir.x * cand_dir.y - current_dir.y * cand_dir.x;
+        float dot = current_dir.x * cand_dir.x + current_dir.y * cand_dir.y;
+        float angle = std::atan2(cross, dot);
+        float dist_to_start = std::sqrt(
+            (cand_start.x - current_end.x) * (cand_start.x - current_end.x) +
+            (cand_start.y - current_end.y) * (cand_start.y - current_end.y));
+        float dist_to_end = std::sqrt(
+            (cand_end.x - current_end.x) * (cand_end.x - current_end.x) +
+            (cand_end.y - current_end.y) * (cand_end.y - current_end.y));
+        if (dist_to_start >= connection_tolerance &&
+            dist_to_end >= connection_tolerance) {
+          continue;
+        }
+        bool is_unvisited = !road_network->is_visited(connected_seg);
+        candidates.push_back({connected_seg, use_reverse, angle, is_unvisited,
+                              std::min(dist_to_start, dist_to_end)});
+      }
+      if (candidates.empty()) {
+        return;
+      }
+    }
+
+    if (prioritize_unvisited) {
+      std::vector<Candidate> unvisited_candidates;
+      std::vector<Candidate> visited_candidates;
+      for (const auto &cand : candidates) {
+        if (cand.is_unvisited) {
+          unvisited_candidates.push_back(cand);
+        } else {
+          visited_candidates.push_back(cand);
+        }
+      }
+
+      if (!unvisited_candidates.empty()) {
+        std::sort(unvisited_candidates.begin(), unvisited_candidates.end(),
+                  [](const Candidate &a, const Candidate &b) {
+                    float abs_angle_a = std::abs(a.angle);
+                    float abs_angle_b = std::abs(b.angle);
+                    if (abs_angle_a < 0.1f && abs_angle_b >= 0.1f) {
+                      return true;
+                    }
+                    if (abs_angle_a >= 0.1f && abs_angle_b < 0.1f) {
+                      return false;
+                    }
+                    if (abs_angle_a < 0.1f && abs_angle_b < 0.1f) {
+                      return abs_angle_a < abs_angle_b;
+                    }
+                    if (a.angle > 0.0f && b.angle <= 0.0f) {
+                      return true;
+                    }
+                    if (a.angle <= 0.0f && b.angle > 0.0f) {
+                      return false;
+                    }
+                    return abs_angle_a < abs_angle_b;
+                  });
+        next_segment_index = unvisited_candidates[0].segment_index;
+        next_reverse_direction = unvisited_candidates[0].reverse;
+        return;
+      }
     }
 
     // Wall follower: Follow right wall
@@ -318,22 +452,23 @@ private:
             // Straight (angle ≈ 0): highest priority (only turn if can't go
             // straight)
             float abs_angle = std::abs(angle);
-            if (abs_angle < 0.2f) { // ~11 degrees tolerance for "straight"
-              return abs_angle;     // 0 is best, small angles are good
+            if (abs_angle <
+                0.1f) { // ~6 degrees tolerance for "straight" - stricter
+              return abs_angle; // 0 is best, small angles are good
             }
             // Right turn (0 to π): second priority
             if (angle > 0.0f) {
-              return 1.0f - angle / 3.14159f; // Range: 1.0 (small right) to 0.0
+              return 1.0f + angle / 3.14159f; // Range: 1.0 (small right) to 2.0
                                               // (90° right)
             }
             // Left turn (-π to 0): third priority
             if (angle < 0.0f) {
-              return 2.0f +
+              return 3.0f +
                      abs_angle /
-                         3.14159f; // Range: 2.0 (small left) to 3.0 (90° left)
+                         3.14159f; // Range: 3.0 (small left) to 4.0 (90° left)
             }
             // Turn around (≈ ±π): lowest priority
-            return 4.0f;
+            return 5.0f;
           };
 
           float priority_a = get_priority(a.angle);
@@ -370,6 +505,13 @@ private:
     size_t best_seg = SIZE_MAX;
     bool best_reverse = false;
 
+    std::set<size_t> recent_segments;
+    recent_segments.insert(last_segment_index);
+    recent_segments.insert(second_last_segment_index);
+    for (size_t hist_seg : road_following.segment_history) {
+      recent_segments.insert(hist_seg);
+    }
+
     // First pass: try to find a segment that's not in recent history
     for (const auto &[connected_seg, use_reverse] : connections) {
       if (connected_seg == current_seg) {
@@ -377,8 +519,7 @@ private:
       }
       // In forced direction mode, prefer segments not in recent history
       // but if that's the only option, we'll allow it in second pass
-      if (connected_seg == last_segment_index ||
-          connected_seg == second_last_segment_index) {
+      if (recent_segments.find(connected_seg) != recent_segments.end()) {
         continue;
       }
 

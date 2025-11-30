@@ -73,30 +73,21 @@ struct HandleCollisions
   virtual void once(float) override {
     cached_brick_grid =
         afterhours::EntityHelper::get_singleton_cmp<BrickGrid>();
-    if (!cached_brick_grid) {
-      log_error("BrickGrid singleton not found");
-      return;
-    }
+    invariant(cached_brick_grid, "BrickGrid singleton not found");
 
     cached_shop = afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
-    if (!cached_shop) {
-      log_error("IsShopManager singleton not found");
-      return;
-    }
+    invariant(cached_shop, "IsShopManager singleton not found");
 
     cached_photo_reveal =
         afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
-    if (!cached_photo_reveal) {
-      log_error("IsPhotoReveal singleton not found");
-      return;
-    }
+    invariant(cached_photo_reveal, "IsPhotoReveal singleton not found");
   }
 
   virtual void for_each_with(afterhours::Entity &, Transform &car_transform,
                              CanDamage &car_damage, float) override {
-    if (!cached_brick_grid || !cached_shop || !cached_photo_reveal) {
-      return;
-    }
+    invariant(cached_brick_grid, "BrickGrid singleton not cached");
+    invariant(cached_shop, "IsShopManager singleton not cached");
+    invariant(cached_photo_reveal, "IsPhotoReveal singleton not cached");
 
     float car_radius = car_transform.size.x / 2.0f;
     vec2 car_center = {car_transform.position.x + car_radius,

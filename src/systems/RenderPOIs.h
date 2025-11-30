@@ -14,13 +14,12 @@ struct RenderPOIs : afterhours::System<PointOfInterest> {
     }
 
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    if (fog) {
-      int grid_x = game_constants::world_to_grid_x(poi.position.x);
-      int grid_y = game_constants::world_to_grid_y(poi.position.y);
+    invariant(fog, "FogOfWar singleton not found");
+    int grid_x = game_constants::world_to_grid_x(poi.position.x);
+    int grid_y = game_constants::world_to_grid_y(poi.position.y);
 
-      if (!fog->is_revealed(grid_x, grid_y)) {
-        return;
-      }
+    if (!fog->is_revealed(grid_x, grid_y)) {
+      return;
     }
 
     raylib::Color poi_color = get_poi_color(poi.poi_type);
@@ -57,4 +56,3 @@ private:
     }
   }
 };
-

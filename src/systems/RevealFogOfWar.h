@@ -15,9 +15,7 @@ struct RevealFogOfWar
   virtual void for_each_with(afterhours::Entity &, Transform &transform,
                              float) override {
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    if (!fog) {
-      return;
-    }
+    invariant(fog, "FogOfWar singleton not found");
 
     MapRevealSystem::reveal_position(transform.position, fog->reveal_radius);
   }

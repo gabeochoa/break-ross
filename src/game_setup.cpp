@@ -45,76 +45,74 @@ afterhours::Entity &make_car(vec2 position, vec2 velocity, float radius,
       afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
   IsShopManager *shop =
       afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
+  invariant(shop, "IsShopManager singleton not found");
 
   float speed = 250.0f;
-  if (shop) {
-    speed *= shop->get_car_speed_multiplier();
-  }
+  speed *= shop->get_car_speed_multiplier();
 
   RoadFollowing &road_following = car.addComponent<RoadFollowing>(speed);
 
-  if (road_network && road_network->is_loaded &&
-      !road_network->segments.empty()) {
-    size_t nearest_segment = 0;
-    float min_dist_sq = std::numeric_limits<float>::max();
+  if (!road_network || !road_network->is_loaded ||
+      road_network->segments.empty()) {
+    road_following.current_segment_index = 0;
+    road_following.progress_along_segment = 0.0f;
+    return car;
+  }
+  size_t nearest_segment = 0;
+  float min_dist_sq = std::numeric_limits<float>::max();
 
-    for (size_t i = 0; i < road_network->segments.size(); ++i) {
-      const RoadSegment &seg = road_network->segments[i];
-      vec2 seg_start = seg.start;
-      vec2 seg_end = seg.end;
-      vec2 seg_dir = {seg_end.x - seg_start.x, seg_end.y - seg_start.y};
-      float seg_len_sq = seg_dir.x * seg_dir.x + seg_dir.y * seg_dir.y;
+  for (size_t i = 0; i < road_network->segments.size(); ++i) {
+    const RoadSegment &seg = road_network->segments[i];
+    vec2 seg_start = seg.start;
+    vec2 seg_end = seg.end;
+    vec2 seg_dir = {seg_end.x - seg_start.x, seg_end.y - seg_start.y};
+    float seg_len_sq = seg_dir.x * seg_dir.x + seg_dir.y * seg_dir.y;
 
-      if (seg_len_sq < 0.001f) {
-        float dist_sq =
-            (position.x - seg_start.x) * (position.x - seg_start.x) +
-            (position.y - seg_start.y) * (position.y - seg_start.y);
-        if (dist_sq < min_dist_sq) {
-          min_dist_sq = dist_sq;
-          nearest_segment = i;
-        }
-        continue;
-      }
-
-      float t = std::max(
-          0.0f, std::min(1.0f, ((position.x - seg_start.x) * seg_dir.x +
-                                (position.y - seg_start.y) * seg_dir.y) /
-                                   seg_len_sq));
-
-      vec2 closest_point = {seg_start.x + t * seg_dir.x,
-                            seg_start.y + t * seg_dir.y};
-      float dist_sq =
-          (position.x - closest_point.x) * (position.x - closest_point.x) +
-          (position.y - closest_point.y) * (position.y - closest_point.y);
-
+    if (seg_len_sq < 0.001f) {
+      float dist_sq = (position.x - seg_start.x) * (position.x - seg_start.x) +
+                      (position.y - seg_start.y) * (position.y - seg_start.y);
       if (dist_sq < min_dist_sq) {
         min_dist_sq = dist_sq;
         nearest_segment = i;
-
-        vec2 seg_to_pos = {position.x - seg_start.x, position.y - seg_start.y};
-        float dot = seg_dir.x * seg_to_pos.x + seg_dir.y * seg_to_pos.y;
-        road_following.reverse_direction = (dot < 0.0f);
       }
+      continue;
     }
 
-    road_following.current_segment_index = nearest_segment;
+    float t =
+        std::max(0.0f, std::min(1.0f, ((position.x - seg_start.x) * seg_dir.x +
+                                       (position.y - seg_start.y) * seg_dir.y) /
+                                          seg_len_sq));
 
-    const RoadSegment &seg = road_network->segments[nearest_segment];
-    vec2 seg_start = road_following.reverse_direction ? seg.end : seg.start;
-    vec2 seg_end = road_following.reverse_direction ? seg.start : seg.end;
-    vec2 seg_dir = {seg_end.x - seg_start.x, seg_end.y - seg_start.y};
-    float seg_len = std::sqrt(seg_dir.x * seg_dir.x + seg_dir.y * seg_dir.y);
+    vec2 closest_point = {seg_start.x + t * seg_dir.x,
+                          seg_start.y + t * seg_dir.y};
+    float dist_sq =
+        (position.x - closest_point.x) * (position.x - closest_point.x) +
+        (position.y - closest_point.y) * (position.y - closest_point.y);
 
-    if (seg_len > 0.001f) {
-      vec2 to_pos = {position.x - seg_start.x, position.y - seg_start.y};
-      float t =
-          (to_pos.x * seg_dir.x + to_pos.y * seg_dir.y) / (seg_len * seg_len);
-      road_following.progress_along_segment = std::max(0.0f, std::min(1.0f, t));
-    } else {
-      road_following.progress_along_segment = 0.0f;
+    if (dist_sq < min_dist_sq) {
+      min_dist_sq = dist_sq;
+      nearest_segment = i;
+
+      vec2 seg_to_pos = {position.x - seg_start.x, position.y - seg_start.y};
+      float dot = seg_dir.x * seg_to_pos.x + seg_dir.y * seg_to_pos.y;
+      road_following.reverse_direction = (dot < 0.0f);
     }
+  }
+
+  road_following.current_segment_index = nearest_segment;
+
+  const RoadSegment &seg = road_network->segments[nearest_segment];
+  vec2 seg_start = road_following.reverse_direction ? seg.end : seg.start;
+  vec2 seg_end = road_following.reverse_direction ? seg.start : seg.end;
+  vec2 seg_dir = {seg_end.x - seg_start.x, seg_end.y - seg_start.y};
+  float seg_len = std::sqrt(seg_dir.x * seg_dir.x + seg_dir.y * seg_dir.y);
+
+  if (seg_len > 0.001f) {
+    vec2 to_pos = {position.x - seg_start.x, position.y - seg_start.y};
+    float t =
+        (to_pos.x * seg_dir.x + to_pos.y * seg_dir.y) / (seg_len * seg_len);
+    road_following.progress_along_segment = std::max(0.0f, std::min(1.0f, t));
   } else {
-    road_following.current_segment_index = 0;
     road_following.progress_along_segment = 0.0f;
   }
 
@@ -252,8 +250,8 @@ static void create_simple_road_network(RoadNetwork &road_network) {
 }
 
 static void spawn_pois(RoadNetwork *road_network) {
-  if (!road_network || !road_network->is_loaded ||
-      road_network->segments.empty()) {
+  invariant(road_network, "RoadNetwork singleton not found");
+  if (!road_network->is_loaded || road_network->segments.empty()) {
     return;
   }
 
@@ -338,77 +336,89 @@ void setup_game() {
   afterhours::camera::HasCamera *camera =
       afterhours::EntityHelper::get_singleton_cmp<
           afterhours::camera::HasCamera>();
-  if (camera) {
-    camera->set_position({game_constants::WORLD_WIDTH * 0.5f,
-                          game_constants::WORLD_HEIGHT * 0.5f});
-    camera->set_offset({game_constants::WORLD_WIDTH * 0.5f,
+  invariant(camera, "HasCamera singleton not found");
+  camera->set_position({game_constants::WORLD_WIDTH * 0.5f,
                         game_constants::WORLD_HEIGHT * 0.5f});
-    camera->set_zoom(0.75f);
-  }
+  camera->set_offset({game_constants::WORLD_WIDTH * 0.5f,
+                      game_constants::WORLD_HEIGHT * 0.5f});
+  camera->set_zoom(0.75f);
 
   IsPhotoReveal *photo_reveal =
       afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
-  if (photo_reveal && !photo_reveal->is_loaded) {
-    std::filesystem::path photo_path = afterhours::files::get_resource_path(
-        "images/photos", "test_photo_500x500.png");
-    photo_reveal->photo_texture =
-        render_backend::LoadTexture(photo_path.string().c_str());
-    render_backend::SetTextureFilter(photo_reveal->photo_texture,
-                                     raylib::TEXTURE_FILTER_POINT);
-
-    std::filesystem::path vs_path = afterhours::files::get_resource_path(
-        "shaders", "photo_reveal_vertex.glsl");
-    std::filesystem::path fs_path = afterhours::files::get_resource_path(
-        "shaders", "photo_reveal_fragment.glsl");
-    photo_reveal->mask_shader = render_backend::LoadShader(
-        vs_path.string().c_str(), fs_path.string().c_str());
-
-    if (photo_reveal->mask_shader.id != 0) {
-      photo_reveal->mask_shader_mask_loc = render_backend::GetShaderLocation(
-          photo_reveal->mask_shader, "maskTexture");
-      photo_reveal->mask_shader_mask_scale_loc =
-          render_backend::GetShaderLocation(photo_reveal->mask_shader,
-                                            "maskScale");
-    }
-
-    photo_reveal->is_loaded = true;
+  invariant(photo_reveal, "IsPhotoReveal singleton not found");
+  if (photo_reveal->is_loaded) {
+    return;
   }
+  std::filesystem::path photo_path = afterhours::files::get_resource_path(
+      "images/photos", "test_photo_500x500.png");
+  photo_reveal->photo_texture =
+      render_backend::LoadTexture(photo_path.string().c_str());
+  render_backend::SetTextureFilter(photo_reveal->photo_texture,
+                                   raylib::TEXTURE_FILTER_POINT);
+
+  std::filesystem::path vs_path = afterhours::files::get_resource_path(
+      "shaders", "photo_reveal_vertex.glsl");
+  std::filesystem::path fs_path = afterhours::files::get_resource_path(
+      "shaders", "photo_reveal_fragment.glsl");
+  photo_reveal->mask_shader = render_backend::LoadShader(
+      vs_path.string().c_str(), fs_path.string().c_str());
+
+  if (photo_reveal->mask_shader.id != 0) {
+    photo_reveal->mask_shader_mask_loc = render_backend::GetShaderLocation(
+        photo_reveal->mask_shader, "maskTexture");
+    photo_reveal->mask_shader_mask_scale_loc =
+        render_backend::GetShaderLocation(photo_reveal->mask_shader,
+                                          "maskScale");
+  }
+
+  photo_reveal->is_loaded = true;
 
   RoadNetwork *road_network =
       afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
-  if (road_network && !road_network->is_loaded) {
-    std::filesystem::path nyc_roads_path =
-        afterhours::files::get_resource_path("", "nyc_roads.json");
-    if (!load_road_network_from_json(*road_network, nyc_roads_path)) {
-      log_info("NYC roads not found, using procedural road network");
-      create_simple_road_network(*road_network);
-    } else {
-      log_info("Loaded NYC road network with {} segments",
-               road_network->segments.size());
-    }
-
-    // Build connected components
-    // Use tolerance matching road width (square size = 12.0, so ~15.0 for
-    // connections)
-    if (road_network && !road_network->segments.empty()) {
-      road_network->build_connected_components(15.0f);
-      if (!road_network->segments.empty()) {
-        road_network->current_component_id = road_network->get_component_id(0);
-        log_info("Built {} connected components, starting in component {}",
-                 road_network->components.size(),
-                 road_network->current_component_id);
-      }
-    }
-
-    spawn_pois(road_network);
+  invariant(road_network, "RoadNetwork singleton not found");
+  if (road_network->is_loaded) {
+    return;
   }
+  std::filesystem::path nyc_roads_path =
+      afterhours::files::get_resource_path("", "nyc_roads.json");
+  if (!load_road_network_from_json(*road_network, nyc_roads_path)) {
+    log_info("NYC roads not found, using procedural road network");
+    create_simple_road_network(*road_network);
+  } else {
+    log_info("Loaded NYC road network with {} segments",
+             road_network->segments.size());
+  }
+
+  // Build connected components
+  // Use tolerance matching road width (square size = 12.0, so ~15.0 for
+  // connections)
+  if (road_network->segments.empty()) {
+    spawn_pois(road_network);
+    return;
+  }
+
+  road_network->build_connected_components(15.0f);
+  if (road_network->segments.empty()) {
+    spawn_pois(road_network);
+    return;
+  }
+
+  road_network->current_component_id = road_network->get_component_id(0);
+  log_info("Built {} connected components, starting in component {}",
+           road_network->components.size(), road_network->current_component_id);
+
+  spawn_pois(road_network);
 
   float square_size = 12.0f;
   float square_speed = 250.0f;
 
   vec2 square_start_position{0.0f, 0.0f};
   size_t initial_segment_index = 0;
-  if (road_network && !road_network->segments.empty()) {
+  if (road_network->segments.empty()) {
+    square_start_position = vec2{game_constants::WORLD_WIDTH * 0.5f,
+                                 game_constants::WORLD_HEIGHT * 0.5f};
+    initial_segment_index = 0;
+  } else {
     // For debugging: spawn near the problematic spot (segment 745)
     // If segment 745 exists, use it; otherwise fall back to segment 0
     size_t debug_segment = 745;
@@ -422,10 +432,6 @@ void setup_game() {
       square_start_position = road_network->segments[0].start;
       initial_segment_index = 0;
     }
-  } else {
-    square_start_position = vec2{game_constants::WORLD_WIDTH * 0.5f,
-                                 game_constants::WORLD_HEIGHT * 0.5f};
-    initial_segment_index = 0;
   }
 
   make_square(square_start_position, square_size, square_speed,

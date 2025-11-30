@@ -15,23 +15,21 @@ struct RenderRoads : afterhours::System<RoadNetwork> {
     }
 
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    bool check_fog = (fog != nullptr);
+    invariant(fog, "FogOfWar singleton not found");
 
     for (size_t i = 0; i < road_network.segments.size(); ++i) {
       const RoadSegment &segment = road_network.segments[i];
-      
-      if (check_fog) {
-        int grid_x1 = game_constants::world_to_grid_x(segment.start.x);
-        int grid_y1 = game_constants::world_to_grid_y(segment.start.y);
-        int grid_x2 = game_constants::world_to_grid_x(segment.end.x);
-        int grid_y2 = game_constants::world_to_grid_y(segment.end.y);
 
-        bool start_revealed = fog->is_revealed(grid_x1, grid_y1);
-        bool end_revealed = fog->is_revealed(grid_x2, grid_y2);
+      int grid_x1 = game_constants::world_to_grid_x(segment.start.x);
+      int grid_y1 = game_constants::world_to_grid_y(segment.start.y);
+      int grid_x2 = game_constants::world_to_grid_x(segment.end.x);
+      int grid_y2 = game_constants::world_to_grid_y(segment.end.y);
 
-        if (!start_revealed && !end_revealed) {
-          continue;
-        }
+      bool start_revealed = fog->is_revealed(grid_x1, grid_y1);
+      bool end_revealed = fog->is_revealed(grid_x2, grid_y2);
+
+      if (!start_revealed && !end_revealed) {
+        continue;
       }
 
       bool is_mapped = MapRevealSystem::query_segment(i);

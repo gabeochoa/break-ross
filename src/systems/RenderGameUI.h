@@ -44,16 +44,14 @@ private:
   void render_photo_reveal(float padding_x, float padding_y, float line_spacing,
                            float font_size) const {
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    if (fog) {
-      float reveal_percentage = fog->get_reveal_percentage();
-      std::string reveal_text =
-          "Revealed: " +
-          std::to_string(static_cast<int>(reveal_percentage)) +
-          "%";
-      raylib::DrawTextEx(uiFont, reveal_text.c_str(),
-                         {padding_x, padding_y + line_spacing}, font_size, 1.0f,
-                         raylib::WHITE);
-    }
+    invariant(fog, "FogOfWar singleton not found");
+    float reveal_percentage = fog->get_reveal_percentage();
+    std::string reveal_text =
+        "Revealed: " + std::to_string(static_cast<int>(reveal_percentage)) +
+        "%";
+    raylib::DrawTextEx(uiFont, reveal_text.c_str(),
+                       {padding_x, padding_y + line_spacing}, font_size, 1.0f,
+                       raylib::WHITE);
   }
 
   void render_shop(IsShopManager *shop, int screen_width, int screen_height,
@@ -114,7 +112,8 @@ private:
         "New Car (x" + std::to_string(shop->car_count) + ")");
 
     item_y += item_spacing;
-    std::string algorithm_name = get_algorithm_name(shop->get_current_algorithm());
+    std::string algorithm_name =
+        get_algorithm_name(shop->get_current_algorithm());
     render_shop_button(
         shop, shop_x, shop_width, shop_padding, item_y, button_width,
         button_height, font_size, mouse_pos, mouse_clicked,
@@ -143,7 +142,7 @@ private:
                            float shop_padding, float item_y, float button_width,
                            float button_height, float font_size,
                            raylib::Vector2 mouse_pos, bool mouse_clicked,
-                            int cost, int /* level_or_count */,
+                           int cost, int /* level_or_count */,
                            std::function<void()> purchase_func,
                            const std::string &label) const {
     bool can_afford = shop->pixels_collected >= cost;
@@ -207,20 +206,20 @@ private:
 
     if (total_count > 0) {
       float discovery_y = padding_y + line_spacing * 2.0f;
-      std::string discovery_text = "Discoveries: " +
-                                   std::to_string(discovered_count) + "/" +
-                                   std::to_string(total_count);
+      std::string discovery_text =
+          "Discoveries: " + std::to_string(discovered_count) + "/" +
+          std::to_string(total_count);
       raylib::DrawTextEx(uiFont, discovery_text.c_str(),
                          {padding_x, discovery_y}, font_size, 1.0f,
                          raylib::WHITE);
 
       if (landmark_count > 0 || city_count > 0) {
         float detail_y = discovery_y + line_spacing * 0.8f;
-        std::string detail_text = "  Landmarks: " + std::to_string(landmark_count) +
-                                  ", Cities: " + std::to_string(city_count);
-        raylib::DrawTextEx(uiFont, detail_text.c_str(),
-                           {padding_x, detail_y}, font_size * 0.8f, 1.0f,
-                           raylib::YELLOW);
+        std::string detail_text =
+            "  Landmarks: " + std::to_string(landmark_count) +
+            ", Cities: " + std::to_string(city_count);
+        raylib::DrawTextEx(uiFont, detail_text.c_str(), {padding_x, detail_y},
+                           font_size * 0.8f, 1.0f, raylib::YELLOW);
       }
     }
   }

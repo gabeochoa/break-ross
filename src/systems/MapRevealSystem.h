@@ -10,9 +10,11 @@ struct MapRevealSystem {
   static bool reveal_segment(size_t segment_index) {
     RoadNetwork *road_network =
         afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
+    invariant(road_network, "RoadNetwork singleton not found");
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
+    invariant(fog, "FogOfWar singleton not found");
 
-    if (!road_network || !road_network->is_loaded ||
+    if (!road_network->is_loaded ||
         segment_index >= road_network->segments.size()) {
       return false;
     }
@@ -25,13 +27,8 @@ struct MapRevealSystem {
 
     IsShopManager *shop =
         afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
-    if (shop) {
-      shop->pixels_collected += 1;
-    }
-
-    if (!fog) {
-      return true;
-    }
+    invariant(shop, "IsShopManager singleton not found");
+    shop->pixels_collected += 1;
 
     const RoadSegment &segment = road_network->segments[segment_index];
     reveal_segment_fog(segment, fog);
@@ -42,9 +39,11 @@ struct MapRevealSystem {
   static bool query_segment(size_t segment_index) {
     RoadNetwork *road_network =
         afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
+    invariant(road_network, "RoadNetwork singleton not found");
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
+    invariant(fog, "FogOfWar singleton not found");
 
-    if (!road_network || !road_network->is_loaded ||
+    if (!road_network->is_loaded ||
         segment_index >= road_network->segments.size()) {
       return false;
     }
@@ -53,29 +52,23 @@ struct MapRevealSystem {
       return true;
     }
 
-    if (!fog) {
-      return false;
-    }
-
     const RoadSegment &segment = road_network->segments[segment_index];
     return is_segment_revealed_in_fog(segment, fog);
   }
 
   static void reveal_position(const vec2 &position, float radius) {
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    if (!fog) {
-      return;
-    }
-
+    invariant(fog, "FogOfWar singleton not found");
     IsPhotoReveal *photo_reveal =
         afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
 
     float reveal_radius_sq = radius * radius;
     int center_grid_x = game_constants::world_to_grid_x(position.x);
     int center_grid_y = game_constants::world_to_grid_y(position.y);
 
-    int radius_in_cells = static_cast<int>(
-        std::ceil(radius / game_constants::BRICK_CELL_SIZE));
+    int radius_in_cells =
+        static_cast<int>(std::ceil(radius / game_constants::BRICK_CELL_SIZE));
 
     for (int dy = -radius_in_cells; dy <= radius_in_cells; ++dy) {
       for (int dx = -radius_in_cells; dx <= radius_in_cells; ++dx) {
@@ -100,12 +93,12 @@ struct MapRevealSystem {
         float dy_world = cell_center.y - position.y;
         float dist_sq = dx_world * dx_world + dy_world * dy_world;
 
-        if (dist_sq <= reveal_radius_sq) {
-          fog->set_revealed(grid_x, grid_y);
-          if (photo_reveal) {
-            photo_reveal->set_revealed(grid_x, grid_y);
-          }
+        if (dist_sq > reveal_radius_sq) {
+          continue;
         }
+
+        fog->set_revealed(grid_x, grid_y);
+        photo_reveal->set_revealed(grid_x, grid_y);
       }
     }
   }
@@ -113,9 +106,11 @@ struct MapRevealSystem {
   static void compute_reachable_cells() {
     RoadNetwork *road_network =
         afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
+    invariant(road_network, "RoadNetwork singleton not found");
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
+    invariant(fog, "FogOfWar singleton not found");
 
-    if (!road_network || !road_network->is_loaded || !fog) {
+    if (!road_network->is_loaded) {
       return;
     }
 
@@ -129,15 +124,16 @@ struct MapRevealSystem {
       vec2 start = segment.start;
       vec2 end = segment.end;
       vec2 direction = {end.x - start.x, end.y - start.y};
-      float segment_length = std::sqrt(direction.x * direction.x +
-                                       direction.y * direction.y);
+      float segment_length =
+          std::sqrt(direction.x * direction.x + direction.y * direction.y);
 
       if (segment_length < 0.001f) {
         mark_reachable_position(start, reveal_radius, fog);
         continue;
       }
 
-      int steps = static_cast<int>(std::ceil(segment_length / reveal_radius)) + 1;
+      int steps =
+          static_cast<int>(std::ceil(segment_length / reveal_radius)) + 1;
 
       for (int i = 0; i <= steps; ++i) {
         float t = static_cast<float>(i) / static_cast<float>(steps);
@@ -156,8 +152,8 @@ private:
     int center_grid_x = game_constants::world_to_grid_x(position.x);
     int center_grid_y = game_constants::world_to_grid_y(position.y);
 
-    int radius_in_cells = static_cast<int>(
-        std::ceil(radius / game_constants::BRICK_CELL_SIZE));
+    int radius_in_cells =
+        static_cast<int>(std::ceil(radius / game_constants::BRICK_CELL_SIZE));
 
     for (int dy = -radius_in_cells; dy <= radius_in_cells; ++dy) {
       for (int dx = -radius_in_cells; dx <= radius_in_cells; ++dx) {
@@ -193,8 +189,8 @@ private:
     vec2 start = segment.start;
     vec2 end = segment.end;
     vec2 direction = {end.x - start.x, end.y - start.y};
-    float segment_length = std::sqrt(direction.x * direction.x +
-                                     direction.y * direction.y);
+    float segment_length =
+        std::sqrt(direction.x * direction.x + direction.y * direction.y);
 
     if (segment_length < 0.001f) {
       reveal_position(start, fog->reveal_radius);
@@ -216,8 +212,8 @@ private:
     vec2 start = segment.start;
     vec2 end = segment.end;
     vec2 direction = {end.x - start.x, end.y - start.y};
-    float segment_length = std::sqrt(direction.x * direction.x +
-                                     direction.y * direction.y);
+    float segment_length =
+        std::sqrt(direction.x * direction.x + direction.y * direction.y);
 
     if (segment_length < 0.001f) {
       int grid_x = game_constants::world_to_grid_x(start.x);
@@ -248,4 +244,3 @@ private:
     return any_revealed;
   }
 };
-
