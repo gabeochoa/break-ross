@@ -161,6 +161,10 @@ struct RevealedRect {
   float y;
   float width;
   float height;
+  int grid_x;
+  int grid_y;
+  int grid_width;
+  int grid_height;
 };
 
 struct IsPhotoReveal : afterhours::BaseComponent {
@@ -227,6 +231,8 @@ struct IsPhotoReveal : afterhours::BaseComponent {
           game_constants::GRID_WIDTH, game_constants::GRID_HEIGHT,
           raylib::BLACK);
       mask_texture = render_backend::LoadTextureFromImage(mask_image);
+      render_backend::SetTextureFilter(mask_texture,
+                                       raylib::TEXTURE_FILTER_POINT);
       render_backend::UnloadImage(mask_image);
     }
 
@@ -288,6 +294,10 @@ struct IsPhotoReveal : afterhours::BaseComponent {
                  grid_y * game_constants::BRICK_CELL_SIZE;
         rect.width = rect_width * game_constants::BRICK_CELL_SIZE;
         rect.height = rect_height * game_constants::BRICK_CELL_SIZE;
+        rect.grid_x = grid_x;
+        rect.grid_y = grid_y;
+        rect.grid_width = rect_width;
+        rect.grid_height = rect_height;
         merged_rects.push_back(rect);
       }
     }
@@ -368,10 +378,13 @@ struct BrickGrid : afterhours::BaseComponent {
   }
 };
 
+enum class RoadType { Highway, Primary, Secondary, Residential };
+
 struct RoadSegment {
   vec2 start;
   vec2 end;
   float width{2.0f};
+  RoadType road_type{RoadType::Residential};
 };
 
 struct RoadNetwork : afterhours::BaseComponent {
@@ -697,4 +710,17 @@ struct RoadFollowing : afterhours::BaseComponent {
 
   RoadFollowing() = default;
   RoadFollowing(float speed_in) : speed(speed_in) {}
+};
+
+enum class POIType { Landmark, City, Area };
+
+struct PointOfInterest : afterhours::BaseComponent {
+  vec2 position{0.0f, 0.0f};
+  POIType poi_type{POIType::Area};
+  int reward_amount{10};
+  bool is_discovered{false};
+
+  PointOfInterest() = default;
+  PointOfInterest(vec2 pos, POIType type, int reward)
+      : position(pos), poi_type(type), reward_amount(reward) {}
 };

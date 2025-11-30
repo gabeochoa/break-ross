@@ -13,6 +13,7 @@
 #include <cmath>
 #include <limits>
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 
 template <typename Component, typename... Args>
 static void addIfMissing(afterhours::Entity &entity, Args &&...args) {
@@ -165,6 +166,21 @@ load_road_network_from_json(RoadNetwork &road_network,
         segment.width = 2.0f;
       }
 
+      if (seg_json.contains("road_type")) {
+        std::string road_type_str = seg_json["road_type"].get<std::string>();
+        if (road_type_str == "highway") {
+          segment.road_type = RoadType::Highway;
+        } else if (road_type_str == "primary") {
+          segment.road_type = RoadType::Primary;
+        } else if (road_type_str == "secondary") {
+          segment.road_type = RoadType::Secondary;
+        } else {
+          segment.road_type = RoadType::Residential;
+        }
+      } else {
+        segment.road_type = RoadType::Residential;
+      }
+
       road_network.segments.push_back(segment);
     }
 
@@ -189,12 +205,22 @@ static void create_simple_road_network(RoadNetwork &road_network) {
 
   for (int i = 0; i <= num_horizontal; ++i) {
     float x = i * grid_spacing;
-    road_network.segments.push_back({{x, 0.0f}, {x, world_height}, 3.0f});
+    RoadSegment seg;
+    seg.start = {x, 0.0f};
+    seg.end = {x, world_height};
+    seg.width = 3.0f;
+    seg.road_type = RoadType::Primary;
+    road_network.segments.push_back(seg);
   }
 
   for (int i = 0; i <= num_vertical; ++i) {
     float y = i * grid_spacing;
-    road_network.segments.push_back({{0.0f, y}, {world_width, y}, 3.0f});
+    RoadSegment seg;
+    seg.start = {0.0f, y};
+    seg.end = {world_width, y};
+    seg.width = 3.0f;
+    seg.road_type = RoadType::Primary;
+    road_network.segments.push_back(seg);
   }
 
   for (int i = 0; i < num_horizontal; ++i) {
@@ -203,18 +229,100 @@ static void create_simple_road_network(RoadNetwork &road_network) {
       float y = j * grid_spacing;
 
       if (i < num_horizontal - 1) {
-        road_network.segments.push_back(
-            {{x, y}, {x + grid_spacing, y + grid_spacing * 0.5f}, 2.0f});
+        RoadSegment seg;
+        seg.start = {x, y};
+        seg.end = {x + grid_spacing, y + grid_spacing * 0.5f};
+        seg.width = 2.0f;
+        seg.road_type = RoadType::Residential;
+        road_network.segments.push_back(seg);
       }
       if (j < num_vertical - 1) {
-        road_network.segments.push_back(
-            {{x, y}, {x + grid_spacing * 0.5f, y + grid_spacing}, 2.0f});
+        RoadSegment seg;
+        seg.start = {x, y};
+        seg.end = {x + grid_spacing * 0.5f, y + grid_spacing};
+        seg.width = 2.0f;
+        seg.road_type = RoadType::Residential;
+        road_network.segments.push_back(seg);
       }
     }
   }
 
   road_network.visited_segments.resize(road_network.segments.size(), false);
   road_network.is_loaded = true;
+}
+
+static void spawn_pois(RoadNetwork *road_network) {
+  if (!road_network || !road_network->is_loaded ||
+      road_network->segments.empty()) {
+    return;
+  }
+
+  const float tolerance = 10.0f;
+  std::vector<std::pair<vec2, int>> intersection_points;
+
+  for (size_t i = 0; i < road_network->segments.size(); ++i) {
+    const RoadSegment &seg = road_network->segments[i];
+    vec2 start = seg.start;
+    vec2 end = seg.end;
+
+    bool start_found = false;
+    bool end_found = false;
+
+    for (auto &[pos, count] : intersection_points) {
+      float start_dist_sq = (start.x - pos.x) * (start.x - pos.x) +
+                            (start.y - pos.y) * (start.y - pos.y);
+      float end_dist_sq =
+          (end.x - pos.x) * (end.x - pos.x) + (end.y - pos.y) * (end.y - pos.y);
+
+      if (start_dist_sq < tolerance * tolerance) {
+        count++;
+        start_found = true;
+      }
+      if (end_dist_sq < tolerance * tolerance) {
+        count++;
+        end_found = true;
+      }
+    }
+
+    if (!start_found) {
+      intersection_points.push_back({start, 1});
+    }
+    if (!end_found) {
+      intersection_points.push_back({end, 1});
+    }
+  }
+
+  int poi_count = 0;
+  int landmark_count = 0;
+  int city_count = 0;
+
+  for (const auto &[pos, connection_count] : intersection_points) {
+    if (connection_count >= 3) {
+      POIType poi_type = POIType::Area;
+      int reward = 10;
+
+      if (connection_count >= 5 && landmark_count < 3) {
+        poi_type = POIType::Landmark;
+        reward = 100;
+        landmark_count++;
+      } else if (connection_count >= 4 && city_count < 5) {
+        poi_type = POIType::City;
+        reward = 50;
+        city_count++;
+      }
+
+      afterhours::Entity &poi = afterhours::EntityHelper::createEntity();
+      poi.addComponent<PointOfInterest>(pos, poi_type, reward);
+      poi_count++;
+
+      if (poi_count >= 20) {
+        break;
+      }
+    }
+  }
+
+  log_info("Spawned {} POIs ({} landmarks, {} cities)", poi_count,
+           landmark_count, city_count);
 }
 
 void setup_game() {
@@ -246,7 +354,7 @@ void setup_game() {
     photo_reveal->photo_texture =
         render_backend::LoadTexture(photo_path.string().c_str());
     render_backend::SetTextureFilter(photo_reveal->photo_texture,
-                                     raylib::TEXTURE_FILTER_BILINEAR);
+                                     raylib::TEXTURE_FILTER_POINT);
 
     std::filesystem::path vs_path = afterhours::files::get_resource_path(
         "shaders", "photo_reveal_vertex.glsl");
@@ -291,6 +399,8 @@ void setup_game() {
                  road_network->current_component_id);
       }
     }
+
+    spawn_pois(road_network);
   }
 
   float square_size = 12.0f;

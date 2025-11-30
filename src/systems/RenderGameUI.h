@@ -23,6 +23,7 @@ struct RenderGameUI : afterhours::System<IsShopManager> {
 
     render_pixels_text(shop, padding_x, padding_y, font_size);
     render_photo_reveal(padding_x, padding_y, line_spacing, font_size);
+    render_discoveries(padding_x, padding_y, line_spacing, font_size);
 
     if (shop->shop_open) {
       render_shop(shop, screen_width, screen_height, font_size, line_spacing);
@@ -181,5 +182,46 @@ private:
     float hint_y = padding_y + line_spacing * 2.0f;
     raylib::DrawTextEx(uiFont, "Press TAB to open shop", {padding_x, hint_y},
                        font_size * 0.8f, 1.0f, raylib::GRAY);
+  }
+
+  void render_discoveries(float padding_x, float padding_y, float line_spacing,
+                          float font_size) const {
+    int discovered_count = 0;
+    int total_count = 0;
+    int landmark_count = 0;
+    int city_count = 0;
+
+    for (const PointOfInterest &poi : afterhours::EntityQuery()
+                                          .whereHasComponent<PointOfInterest>()
+                                          .gen_as<PointOfInterest>()) {
+      total_count++;
+      if (poi.is_discovered) {
+        discovered_count++;
+        if (poi.poi_type == POIType::Landmark) {
+          landmark_count++;
+        } else if (poi.poi_type == POIType::City) {
+          city_count++;
+        }
+      }
+    }
+
+    if (total_count > 0) {
+      float discovery_y = padding_y + line_spacing * 2.0f;
+      std::string discovery_text = "Discoveries: " +
+                                   std::to_string(discovered_count) + "/" +
+                                   std::to_string(total_count);
+      raylib::DrawTextEx(uiFont, discovery_text.c_str(),
+                         {padding_x, discovery_y}, font_size, 1.0f,
+                         raylib::WHITE);
+
+      if (landmark_count > 0 || city_count > 0) {
+        float detail_y = discovery_y + line_spacing * 0.8f;
+        std::string detail_text = "  Landmarks: " + std::to_string(landmark_count) +
+                                  ", Cities: " + std::to_string(city_count);
+        raylib::DrawTextEx(uiFont, detail_text.c_str(),
+                           {padding_x, detail_y}, font_size * 0.8f, 1.0f,
+                           raylib::YELLOW);
+      }
+    }
   }
 };

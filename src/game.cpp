@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "systems/AutoRevealUnreachableFog.h"
 #include "systems/CarPhysics.h"
+#include "systems/DiscoverySystem.h"
 #include "systems/HandleCameraControls.h"
 #include "systems/HandleCollisions.h"
 #include "systems/HandleShopInput.h"
@@ -22,6 +23,7 @@
 #include "systems/RenderFogOfWar.h"
 #include "systems/RenderGameUI.h"
 #include "systems/RenderLetterboxBars.h"
+#include "systems/RenderPOIs.h"
 #include "systems/RenderPhotoReveal.h"
 #include "systems/RenderRenderTexture.h"
 #include "systems/RenderRoads.h"
@@ -87,6 +89,7 @@ void game() {
     systems.register_update_system(std::make_unique<RevealFogOfWar>());
     systems.register_update_system(
         std::make_unique<AutoRevealUnreachableFog>());
+    systems.register_update_system(std::make_unique<DiscoverySystem>());
 
     auto test_system = std::make_unique<TestSystem>();
     test_system_ptr = test_system.get();
@@ -96,8 +99,10 @@ void game() {
   {
     systems.register_render_system(std::make_unique<BeginWorldRender>());
     afterhours::camera::register_begin_camera(systems);
-    systems.register_render_system(std::make_unique<RenderPhotoReveal>());
+    // systems.register_render_system(std::make_unique<RenderPhotoReveal>()); //
+    // Disabled
     systems.register_render_system(std::make_unique<RenderRoads>());
+    systems.register_render_system(std::make_unique<RenderPOIs>());
     systems.register_render_system(std::make_unique<RenderBrick>());
     systems.register_render_system(std::make_unique<RenderCar>());
     systems.register_render_system(std::make_unique<RenderSquare>());
