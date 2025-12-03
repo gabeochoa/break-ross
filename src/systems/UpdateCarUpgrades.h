@@ -32,8 +32,8 @@ struct UpdateCarUpgrades : afterhours::System<IsShopManager> {
     if (speed_changed) {
       float speed_multiplier = shop.get_car_speed_multiplier();
 
-      float old_multiplier =
-          old_speed_level > 0 ? 1.0f + ((old_speed_level - 1) * 0.2f) : 1.0f;
+      // Must match the formula in IsShopManager::get_car_speed_multiplier()
+      float old_multiplier = 1.0f + (old_speed_level * 0.2f);
       float speed_scale = speed_multiplier / old_multiplier;
 
       for (Transform &transform : afterhours::EntityQuery()
