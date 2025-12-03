@@ -43,6 +43,20 @@ bool handle_car_edge_collision_with_cell(vec2 car_center, float car_radius,
   }
 
   float distance = std::sqrt(distance_sq);
+
+  // Guard against division by zero when car center is exactly on the brick edge
+  if (distance < 0.0001f) {
+    // Use velocity direction to determine bounce normal
+    float vel_len = std::sqrt(car_transform.velocity.x * car_transform.velocity.x +
+                              car_transform.velocity.y * car_transform.velocity.y);
+    if (vel_len > 0.0001f) {
+      // Bounce back in the opposite direction of travel
+      car_transform.velocity.x = -car_transform.velocity.x;
+      car_transform.velocity.y = -car_transform.velocity.y;
+    }
+    return true;
+  }
+
   vec2 normal = {dx / distance, dy / distance};
 
   float dot_product =

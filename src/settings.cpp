@@ -146,6 +146,11 @@ void Settings::toggle_post_processing() {
 }
 
 bool Settings::load_save_file(int width, int height) {
+  // Store command-line resolution to restore after loading JSON
+  // (command-line args should take precedence over saved settings)
+  int cmdline_width = width;
+  int cmdline_height = height;
+
   this->data->resolution.width = width;
   this->data->resolution.height = height;
 
@@ -179,6 +184,11 @@ bool Settings::load_save_file(int width, int height) {
 
     (*this->data) = settingsJSON;
     this->data->loaded_from = settings_places[file_loc];
+
+    // Restore command-line resolution (takes precedence over saved settings)
+    this->data->resolution.width = cmdline_width;
+    this->data->resolution.height = cmdline_height;
+
     refresh_settings();
     return true;
 
