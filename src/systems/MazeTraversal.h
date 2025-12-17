@@ -99,8 +99,11 @@ struct MazeTraversal
     float normalized_x = direction.x / segment_length;
     float normalized_y = direction.y / segment_length;
 
-    bool just_revealed =
-        MapRevealSystem::reveal_segment(road_following.current_segment_index);
+    bool just_revealed = false;
+    if (entity.hasTag(ColliderTag::Square)) {
+      just_revealed =
+          MapRevealSystem::reveal_segment(road_following.current_segment_index);
+    }
 
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
     invariant(fog, "FogOfWar singleton not found");

@@ -11,7 +11,7 @@
 struct RevealFogOfWar
     : afterhours::System<
           Transform,
-          afterhours::tags::Any<ColliderTag::Square, ColliderTag::Circle>> {
+          afterhours::tags::All<ColliderTag::Square>> {
   virtual void for_each_with(afterhours::Entity &, Transform &transform,
                              float) override {
     FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
