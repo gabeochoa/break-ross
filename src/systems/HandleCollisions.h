@@ -42,8 +42,22 @@ bool handle_car_edge_collision_with_cell(vec2 car_center, float car_radius,
     return false;
   }
 
+  vec2 normal = {0.0f, 0.0f};
   float distance = std::sqrt(distance_sq);
-  vec2 normal = {dx / distance, dy / distance};
+  if (distance > 0.0001f) {
+    normal = {dx / distance, dy / distance};
+  } else {
+    // Degenerate case: circle center exactly on closest point.
+    // Fall back to "bounce back" using current velocity direction.
+    float speed = std::sqrt(car_transform.velocity.x * car_transform.velocity.x +
+                            car_transform.velocity.y * car_transform.velocity.y);
+    if (speed > 0.0001f) {
+      normal = {-car_transform.velocity.x / speed,
+                -car_transform.velocity.y / speed};
+    } else {
+      normal = {1.0f, 0.0f};
+    }
+  }
 
   float dot_product =
       car_transform.velocity.x * normal.x + car_transform.velocity.y * normal.y;
@@ -90,8 +104,7 @@ struct HandleCollisions
     invariant(cached_photo_reveal, "IsPhotoReveal singleton not cached");
 
     float car_radius = car_transform.size.x / 2.0f;
-    vec2 car_center = {car_transform.position.x + car_radius,
-                       car_transform.position.y + car_radius};
+    vec2 car_center = car_transform.position;
 
     const float grid_end_x =
         game_constants::BRICK_START_X +

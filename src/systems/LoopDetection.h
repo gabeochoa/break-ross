@@ -24,6 +24,9 @@ struct LoopDetection
       return;
     }
 
+    size_t current_comp =
+        road_network->get_component_id(road_following.current_segment_index);
+
     // Check if we're in a loop (too many consecutive visited segments)
     if (road_following.segments_without_reveal <
         RoadFollowing::LOOP_DETECTION_THRESHOLD) {
@@ -42,7 +45,16 @@ struct LoopDetection
     // jump to a random unvisited segment
     if (road_following.forced_direction_attempts >=
         RoadFollowing::MAX_FORCED_DIRECTION_ATTEMPTS) {
-      size_t unvisited_seg = road_network->find_random_unvisited_segment();
+      size_t unvisited_seg = SIZE_MAX;
+      if (current_comp != SIZE_MAX &&
+          !road_network->is_component_complete(current_comp)) {
+        unvisited_seg =
+            road_network->find_random_unvisited_segment_in_component(
+                current_comp);
+      }
+      if (unvisited_seg == SIZE_MAX) {
+        unvisited_seg = road_network->find_random_unvisited_segment();
+      }
       if (unvisited_seg != SIZE_MAX) {
         size_t attempts = road_following.forced_direction_attempts;
         road_following.current_segment_index = unvisited_seg;
