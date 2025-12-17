@@ -346,32 +346,31 @@ void setup_game() {
   IsPhotoReveal *photo_reveal =
       afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
   invariant(photo_reveal, "IsPhotoReveal singleton not found");
-  if (photo_reveal->is_loaded) {
-    return;
+  if (!photo_reveal->is_loaded) {
+    std::filesystem::path photo_path = afterhours::files::get_resource_path(
+        "images/photos", "test_photo_500x500.png");
+    photo_reveal->photo_texture =
+        render_backend::LoadTexture(photo_path.string().c_str());
+    render_backend::SetTextureFilter(photo_reveal->photo_texture,
+                                     raylib::TEXTURE_FILTER_POINT);
+
+    std::filesystem::path vs_path = afterhours::files::get_resource_path(
+        "shaders", "photo_reveal_vertex.glsl");
+    std::filesystem::path fs_path = afterhours::files::get_resource_path(
+        "shaders", "photo_reveal_fragment.glsl");
+    photo_reveal->mask_shader = render_backend::LoadShader(
+        vs_path.string().c_str(), fs_path.string().c_str());
+
+    if (photo_reveal->mask_shader.id != 0) {
+      photo_reveal->mask_shader_mask_loc = render_backend::GetShaderLocation(
+          photo_reveal->mask_shader, "maskTexture");
+      photo_reveal->mask_shader_mask_scale_loc =
+          render_backend::GetShaderLocation(photo_reveal->mask_shader,
+                                            "maskScale");
+    }
+
+    photo_reveal->is_loaded = true;
   }
-  std::filesystem::path photo_path = afterhours::files::get_resource_path(
-      "images/photos", "test_photo_500x500.png");
-  photo_reveal->photo_texture =
-      render_backend::LoadTexture(photo_path.string().c_str());
-  render_backend::SetTextureFilter(photo_reveal->photo_texture,
-                                   raylib::TEXTURE_FILTER_POINT);
-
-  std::filesystem::path vs_path = afterhours::files::get_resource_path(
-      "shaders", "photo_reveal_vertex.glsl");
-  std::filesystem::path fs_path = afterhours::files::get_resource_path(
-      "shaders", "photo_reveal_fragment.glsl");
-  photo_reveal->mask_shader = render_backend::LoadShader(
-      vs_path.string().c_str(), fs_path.string().c_str());
-
-  if (photo_reveal->mask_shader.id != 0) {
-    photo_reveal->mask_shader_mask_loc = render_backend::GetShaderLocation(
-        photo_reveal->mask_shader, "maskTexture");
-    photo_reveal->mask_shader_mask_scale_loc =
-        render_backend::GetShaderLocation(photo_reveal->mask_shader,
-                                          "maskScale");
-  }
-
-  photo_reveal->is_loaded = true;
 
   RoadNetwork *road_network =
       afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
