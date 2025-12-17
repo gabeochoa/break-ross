@@ -403,9 +403,7 @@ void setup_game() {
     return;
   }
 
-  road_network->current_component_id = road_network->get_component_id(0);
-  log_info("Built {} connected components, starting in component {}",
-           road_network->components.size(), road_network->current_component_id);
+  log_info("Built {} connected components", road_network->components.size());
 
   spawn_pois(road_network);
 
@@ -433,6 +431,11 @@ void setup_game() {
       initial_segment_index = 0;
     }
   }
+
+  road_network->current_component_id =
+      road_network->get_component_id(initial_segment_index);
+  log_info("Starting exploration in component {} (segment {})",
+           road_network->current_component_id, initial_segment_index);
 
   make_square(square_start_position, square_size, square_speed,
               initial_segment_index);

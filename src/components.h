@@ -436,9 +436,32 @@ struct RoadNetwork : afterhours::BaseComponent {
     return unvisited[dist(rng)];
   }
 
+  size_t find_random_unvisited_segment_in_component(size_t comp_id) const {
+    if (comp_id >= components.size()) {
+      return SIZE_MAX;
+    }
+    std::vector<size_t> unvisited;
+    unvisited.reserve(components[comp_id].size());
+    for (size_t seg_idx : components[comp_id]) {
+      if (!is_visited(seg_idx)) {
+        unvisited.push_back(seg_idx);
+      }
+    }
+    if (unvisited.empty()) {
+      return SIZE_MAX;
+    }
+    static std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<size_t> dist(0, unvisited.size() - 1);
+    return unvisited[dist(rng)];
+  }
+
   void build_connected_components(float connection_tolerance) {
     if (segments.empty()) {
       return;
+    }
+
+    if (visited_segments.size() != segments.size()) {
+      visited_segments.resize(segments.size(), false);
     }
 
     component_id.clear();
@@ -583,7 +606,7 @@ struct RoadNetwork : afterhours::BaseComponent {
 
   bool is_component_complete(size_t comp_id) const {
     if (comp_id >= components.size()) {
-      return true;
+      return false;
     }
     size_t total = get_component_size(comp_id);
     size_t visited = get_visited_count_in_component(comp_id);

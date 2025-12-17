@@ -46,7 +46,7 @@ struct MazeTraversal
 
   virtual void once(float) override {}
 
-  virtual void for_each_with(afterhours::Entity & /* entity */,
+  virtual void for_each_with(afterhours::Entity &entity,
                              Transform &transform,
                              RoadFollowing &road_following, float dt) override {
     RoadNetwork *road_network =
@@ -65,6 +65,15 @@ struct MazeTraversal
     if (road_following.current_segment_index >= road_network->segments.size()) {
       road_following.current_segment_index = 0;
       road_following.progress_along_segment = 0.0f;
+    }
+
+    size_t current_comp =
+        road_network->get_component_id(road_following.current_segment_index);
+    if (entity.hasTag(ColliderTag::Square) && current_comp != SIZE_MAX &&
+        road_network->current_component_id != current_comp) {
+      road_network->current_component_id = current_comp;
+      log_info("MazeTraversal: entered component {} (segment {})", current_comp,
+               road_following.current_segment_index);
     }
 
     RoadSegment &segment =
@@ -110,7 +119,16 @@ struct MazeTraversal
     // At 90%+, if we've been going through visited segments for too long, jump
     // to unvisited
     if (prioritize_unvisited && road_following.segments_without_reveal >= 5) {
-      size_t random_unvisited = road_network->find_random_unvisited_segment();
+      size_t random_unvisited = SIZE_MAX;
+      if (current_comp != SIZE_MAX &&
+          !road_network->is_component_complete(current_comp)) {
+        random_unvisited =
+            road_network->find_random_unvisited_segment_in_component(
+                current_comp);
+      }
+      if (random_unvisited == SIZE_MAX) {
+        random_unvisited = road_network->find_random_unvisited_segment();
+      }
       if (random_unvisited != SIZE_MAX) {
         log_info("MazeTraversal: At 90%+, jumping to unvisited segment {} "
                  "after {} visited segments",
@@ -187,8 +205,16 @@ struct MazeTraversal
       if (prioritize_unvisited && next_segment_index != SIZE_MAX) {
         bool next_is_unvisited = !road_network->is_visited(next_segment_index);
         if (!next_is_unvisited) {
-          size_t random_unvisited =
-              road_network->find_random_unvisited_segment();
+          size_t random_unvisited = SIZE_MAX;
+          if (current_comp != SIZE_MAX &&
+              !road_network->is_component_complete(current_comp)) {
+            random_unvisited =
+                road_network->find_random_unvisited_segment_in_component(
+                    current_comp);
+          }
+          if (random_unvisited == SIZE_MAX) {
+            random_unvisited = road_network->find_random_unvisited_segment();
+          }
           if (random_unvisited != SIZE_MAX) {
             log_info("MazeTraversal: At 90%+, no unvisited at junction, "
                      "jumping to unvisited segment {}",
@@ -215,7 +241,16 @@ struct MazeTraversal
       bool is_loop = detect_loop(test_history, next_segment_index);
 
       if (is_loop) {
-        size_t random_unvisited = road_network->find_random_unvisited_segment();
+        size_t random_unvisited = SIZE_MAX;
+        if (current_comp != SIZE_MAX &&
+            !road_network->is_component_complete(current_comp)) {
+          random_unvisited =
+              road_network->find_random_unvisited_segment_in_component(
+                  current_comp);
+        }
+        if (random_unvisited == SIZE_MAX) {
+          random_unvisited = road_network->find_random_unvisited_segment();
+        }
         if (random_unvisited != SIZE_MAX) {
           log_warn(
               "MazeTraversal: Loop detected, jumping to unvisited segment {}",
