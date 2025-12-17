@@ -4,13 +4,12 @@
 #include "../eq.h"
 #include <afterhours/ah.h>
 
-struct RebuildPhotoReveal : afterhours::System<> {
-  virtual void once(float) override {
-    IsPhotoReveal *photo_reveal =
-        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
-    invariant(photo_reveal, "IsPhotoReveal singleton not found");
-    if (photo_reveal->merged_rects_dirty) {
-      photo_reveal->rebuild_merged_rects();
+struct RebuildPhotoReveal : afterhours::System<IsPhotoReveal> {
+  virtual void for_each_with(afterhours::Entity &, IsPhotoReveal &photo_reveal,
+                             float) override {
+    if (!photo_reveal.merged_rects_dirty) {
+      return;
     }
+    photo_reveal.rebuild_merged_rects();
   }
 };
