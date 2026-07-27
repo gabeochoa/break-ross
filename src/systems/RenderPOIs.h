@@ -13,12 +13,13 @@ struct RenderPOIs : afterhours::System<PointOfInterest> {
       return;
     }
 
-    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    invariant(fog, "FogOfWar singleton not found");
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
     int grid_x = game_constants::world_to_grid_x(poi.position.x);
     int grid_y = game_constants::world_to_grid_y(poi.position.y);
 
-    if (!fog->is_revealed(grid_x, grid_y)) {
+    if (!photo_reveal->is_revealed(grid_x, grid_y)) {
       return;
     }
 

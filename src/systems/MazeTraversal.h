@@ -90,9 +90,10 @@ struct MazeTraversal
     bool just_revealed =
         MapRevealSystem::reveal_segment(road_following.current_segment_index);
 
-    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    invariant(fog, "FogOfWar singleton not found");
-    float reveal_percentage = fog->get_reveal_percentage();
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
+    float reveal_percentage = photo_reveal->get_reveal_percentage();
     bool prioritize_unvisited = reveal_percentage >= 90.0f;
 
     // Update segments_without_reveal counter
@@ -254,9 +255,10 @@ private:
       return;
     }
 
-    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    invariant(fog, "FogOfWar singleton not found");
-    float reveal_percentage = fog->get_reveal_percentage();
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
+    float reveal_percentage = photo_reveal->get_reveal_percentage();
     bool prioritize_unvisited = reveal_percentage >= 90.0f;
 
     // Determine which endpoint we're at: 0 = start, 1 = end

@@ -596,34 +596,15 @@ struct RoadNetwork : afterhours::BaseComponent {
   }
 };
 
+// Tracks which grid cells are reachable by road (used to auto-complete the
+// map once everything a car could reach has been revealed). The revealed
+// state itself now lives on IsPhotoReveal, the single reveal-grid owner.
 struct FogOfWar : afterhours::BaseComponent {
-  std::bitset<game_constants::GRID_SIZE> revealed_cells;
   std::bitset<game_constants::GRID_SIZE> reachable_cells;
   float reveal_radius{50.0f};
-  bool is_dirty{false};
   bool reachable_computed{false};
 
   FogOfWar() = default;
-
-  bool is_revealed(int grid_x, int grid_y) const {
-    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
-        grid_y >= game_constants::GRID_HEIGHT) {
-      return false;
-    }
-    return revealed_cells[grid_y * game_constants::GRID_WIDTH + grid_x];
-  }
-
-  void set_revealed(int grid_x, int grid_y) {
-    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
-        grid_y >= game_constants::GRID_HEIGHT) {
-      return;
-    }
-    int idx = grid_y * game_constants::GRID_WIDTH + grid_x;
-    if (!revealed_cells[idx]) {
-      revealed_cells[idx] = true;
-      is_dirty = true;
-    }
-  }
 
   bool is_reachable(int grid_x, int grid_y) const {
     if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
@@ -638,38 +619,7 @@ struct FogOfWar : afterhours::BaseComponent {
         grid_y >= game_constants::GRID_HEIGHT) {
       return;
     }
-    int idx = grid_y * game_constants::GRID_WIDTH + grid_x;
-    reachable_cells[idx] = true;
-  }
-
-  bool are_all_reachable_revealed() const {
-    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
-      if (reachable_cells[i] && !revealed_cells[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void reveal_all_unreachable() {
-    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
-      if (!reachable_cells[i] && !revealed_cells[i]) {
-        revealed_cells[i] = true;
-        is_dirty = true;
-      }
-    }
-  }
-
-  float get_reveal_percentage() const {
-    int revealed_count = 0;
-    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
-      if (revealed_cells[i]) {
-        revealed_count++;
-      }
-    }
-    return (static_cast<float>(revealed_count) /
-            static_cast<float>(game_constants::GRID_SIZE)) *
-           100.0f;
+    reachable_cells[grid_y * game_constants::GRID_WIDTH + grid_x] = true;
   }
 };
 

@@ -28,28 +28,34 @@ struct AutoRevealUnreachableFog : afterhours::System<FogOfWar> {
       return;
     }
 
-    if (fog.are_all_reachable_revealed()) {
-      IsPhotoReveal *photo_reveal =
-          afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
-      invariant(photo_reveal, "IsPhotoReveal singleton not found");
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
 
-      int unreachable_count = 0;
-      for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
-        if (!fog.reachable_cells[i] && !fog.revealed_cells[i]) {
-          int grid_x = i % game_constants::GRID_WIDTH;
-          int grid_y = i / game_constants::GRID_WIDTH;
-          fog.set_revealed(grid_x, grid_y);
-          photo_reveal->set_revealed(grid_x, grid_y);
-          unreachable_count++;
-        }
+    // Wait until every road-reachable cell has been revealed.
+    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
+      int grid_x = i % game_constants::GRID_WIDTH;
+      int grid_y = i / game_constants::GRID_WIDTH;
+      if (fog.reachable_cells[i] && !photo_reveal->is_revealed(grid_x, grid_y)) {
+        return;
       }
-
-      if (unreachable_count > 0) {
-        log_info(
-            "AutoRevealUnreachableFog: Auto-revealed {} unreachable fog cells",
-            unreachable_count);
-      }
-      has_auto_revealed = true;
     }
+
+    // Everything reachable is revealed: reveal the rest so the map can finish.
+    int unreachable_count = 0;
+    for (int i = 0; i < game_constants::GRID_SIZE; ++i) {
+      int grid_x = i % game_constants::GRID_WIDTH;
+      int grid_y = i / game_constants::GRID_WIDTH;
+      if (!fog.reachable_cells[i] && !photo_reveal->is_revealed(grid_x, grid_y)) {
+        photo_reveal->set_revealed(grid_x, grid_y);
+        unreachable_count++;
+      }
+    }
+
+    if (unreachable_count > 0) {
+      log_info("AutoRevealUnreachableFog: Auto-revealed {} unreachable cells",
+               unreachable_count);
+    }
+    has_auto_revealed = true;
   }
 };

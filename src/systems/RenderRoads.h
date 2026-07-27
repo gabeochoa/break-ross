@@ -14,8 +14,9 @@ struct RenderRoads : afterhours::System<RoadNetwork> {
       return;
     }
 
-    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    invariant(fog, "FogOfWar singleton not found");
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
 
     for (size_t i = 0; i < road_network.segments.size(); ++i) {
       const RoadSegment &segment = road_network.segments[i];
@@ -25,8 +26,8 @@ struct RenderRoads : afterhours::System<RoadNetwork> {
       int grid_x2 = game_constants::world_to_grid_x(segment.end.x);
       int grid_y2 = game_constants::world_to_grid_y(segment.end.y);
 
-      bool start_revealed = fog->is_revealed(grid_x1, grid_y1);
-      bool end_revealed = fog->is_revealed(grid_x2, grid_y2);
+      bool start_revealed = photo_reveal->is_revealed(grid_x1, grid_y1);
+      bool end_revealed = photo_reveal->is_revealed(grid_x2, grid_y2);
 
       if (!start_revealed && !end_revealed) {
         continue;

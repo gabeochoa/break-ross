@@ -43,9 +43,10 @@ private:
 
   void render_photo_reveal(float padding_x, float padding_y, float line_spacing,
                            float font_size) const {
-    FogOfWar *fog = afterhours::EntityHelper::get_singleton_cmp<FogOfWar>();
-    invariant(fog, "FogOfWar singleton not found");
-    float reveal_percentage = fog->get_reveal_percentage();
+    IsPhotoReveal *photo_reveal =
+        afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
+    invariant(photo_reveal, "IsPhotoReveal singleton not found");
+    float reveal_percentage = photo_reveal->get_reveal_percentage();
     std::string reveal_text =
         "Revealed: " + std::to_string(static_cast<int>(reveal_percentage)) +
         "%";
