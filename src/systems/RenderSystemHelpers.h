@@ -2,13 +2,14 @@
 
 #include "../components.h"
 #include "../game.h"
+#include "../palette.h"
 #include "../render_backend.h"
 #include <afterhours/ah.h>
 
 struct BeginWorldRender : afterhours::System<> {
   virtual void once(float) const override {
     render_backend::BeginTextureMode(mainRT);
-    render_backend::ClearBackground(raylib::BLACK);
+    render_backend::ClearBackground(palette::BG);
   }
 };
 

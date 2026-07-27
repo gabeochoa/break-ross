@@ -3,6 +3,7 @@
 #include "../components.h"
 #include "../eq.h"
 #include "../game.h"
+#include "../palette.h"
 #include "../render_backend.h"
 #include "../settings.h"
 #include <afterhours/ah.h>
@@ -39,7 +40,7 @@ private:
     std::string pixels_text =
         "Pixels: " + std::to_string(shop->pixels_collected);
     raylib::DrawTextEx(uiFont, pixels_text.c_str(), {x, y}, font_size, 1.0f,
-                       raylib::WHITE);
+                       palette::INK);
   }
 
   void render_territory_status(IsShopManager *shop, float padding_x,
@@ -56,7 +57,7 @@ private:
         std::to_string(static_cast<int>(reveal_percentage)) + "%";
     raylib::DrawTextEx(uiFont, region_text.c_str(),
                        {padding_x, padding_y + line_spacing}, font_size, 1.0f,
-                       raylib::WHITE);
+                       palette::INK);
 
     // Headline countdown: share of the world still unmapped (100% -> 0%).
     char share_buf[48];
@@ -64,7 +65,7 @@ private:
                   static_cast<double>(shop->get_unmapped_share()));
     raylib::DrawTextEx(uiFont, share_buf,
                        {padding_x, padding_y + line_spacing * 2.0f}, font_size,
-                       1.0f, raylib::Color{232, 84, 30, 255});
+                       1.0f, palette::ACCENT);
   }
 
   void render_shop(IsShopManager *shop, int screen_width, int screen_height,
@@ -78,19 +79,18 @@ private:
     raylib::DrawRectangle(static_cast<int>(shop_x - shop_width / 2.0f),
                           static_cast<int>(shop_y - shop_height / 2.0f),
                           static_cast<int>(shop_width),
-                          static_cast<int>(shop_height),
-                          raylib::Color{50, 50, 50, 240});
+                          static_cast<int>(shop_height), palette::PANEL);
 
     raylib::DrawRectangleLines(static_cast<int>(shop_x - shop_width / 2.0f),
                                static_cast<int>(shop_y - shop_height / 2.0f),
                                static_cast<int>(shop_width),
-                               static_cast<int>(shop_height), raylib::WHITE);
+                               static_cast<int>(shop_height), palette::INK);
 
     float shop_title_y = shop_y - shop_height / 2.0f + shop_padding;
     raylib::DrawTextEx(
         uiFont, "SHOP (TAB to close)",
         {shop_x - shop_width / 2.0f + shop_padding, shop_title_y},
-        font_size * 1.5f, 1.0f, raylib::WHITE);
+        font_size * 1.5f, 1.0f, palette::INK);
 
     float item_y = shop_title_y + line_spacing * 2.0f;
     float item_spacing = line_spacing * 1.5f;
@@ -176,7 +176,7 @@ private:
     raylib::Color bg_color = get_button_bg_color(hovered, can_afford);
     raylib::DrawRectangleRec(button, bg_color);
 
-    raylib::Color text_color = can_afford ? raylib::WHITE : raylib::GRAY;
+    raylib::Color text_color = can_afford ? palette::INK : palette::INK_DIM;
     std::string button_text = label + " - " + std::to_string(cost) + " pixels";
     raylib::DrawTextEx(uiFont, button_text.c_str(),
                        {shop_x - shop_width / 2.0f + shop_padding + 5.0f,
@@ -203,7 +203,7 @@ private:
                         float font_size) const {
     float hint_y = padding_y + line_spacing * 4.0f;
     raylib::DrawTextEx(uiFont, "Press TAB to open shop", {padding_x, hint_y},
-                       font_size * 0.8f, 1.0f, raylib::GRAY);
+                       font_size * 0.8f, 1.0f, palette::INK_DIM);
   }
 
   void render_discoveries(float padding_x, float padding_y, float line_spacing,
@@ -234,7 +234,7 @@ private:
           std::to_string(total_count);
       raylib::DrawTextEx(uiFont, discovery_text.c_str(),
                          {padding_x, discovery_y}, font_size, 1.0f,
-                         raylib::WHITE);
+                         palette::INK);
 
       if (landmark_count > 0 || city_count > 0) {
         float detail_y = discovery_y + line_spacing * 0.8f;

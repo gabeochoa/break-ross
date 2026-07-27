@@ -3,6 +3,7 @@
 #include "../components.h"
 #include "../eq.h"
 #include "../game_constants.h"
+#include "../palette.h"
 #include "../render_backend.h"
 #include <afterhours/ah.h>
 
@@ -21,7 +22,7 @@ struct RenderFogOfWar : afterhours::System<IsPhotoReveal> {
         render_backend::DrawRectangleV(
             world_pos,
             {game_constants::BRICK_CELL_SIZE, game_constants::BRICK_CELL_SIZE},
-            raylib::Color{0, 0, 0, 200});
+            palette::BG);
       }
     }
   }

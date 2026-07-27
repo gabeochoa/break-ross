@@ -2,6 +2,7 @@
 
 #include "../components.h"
 #include "../eq.h"
+#include "../palette.h"
 #include "../render_backend.h"
 #include "MapRevealSystem.h"
 #include <afterhours/ah.h>
@@ -43,22 +44,10 @@ struct RenderRoads : afterhours::System<RoadNetwork> {
   }
 
 private:
-  raylib::Color get_road_color(RoadType road_type, bool is_mapped) const {
-    if (!is_mapped) {
-      return raylib::DARKGRAY;
-    }
-
-    switch (road_type) {
-    case RoadType::Highway:
-      return raylib::YELLOW;
-    case RoadType::Primary:
-      return raylib::GREEN;
-    case RoadType::Secondary:
-      return raylib::Color{100, 200, 100, 255};
-    case RoadType::Residential:
-    default:
-      return raylib::Color{150, 150, 150, 255};
-    }
+  raylib::Color get_road_color(RoadType /* road_type */, bool is_mapped) const {
+    // Blueprint style: streets revealed-but-not-yet-mapped are faint ink;
+    // mapped streets light up in the accent color.
+    return is_mapped ? palette::ACCENT : palette::INK_DIM;
   }
 
   float get_road_width(RoadType road_type) const {
