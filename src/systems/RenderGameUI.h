@@ -6,6 +6,7 @@
 #include "../render_backend.h"
 #include "../settings.h"
 #include <afterhours/ah.h>
+#include <cstdio>
 #include <string>
 
 struct RenderGameUI : afterhours::System<IsShopManager> {
@@ -22,7 +23,7 @@ struct RenderGameUI : afterhours::System<IsShopManager> {
     float line_spacing = font_size * 1.2f;
 
     render_pixels_text(shop, padding_x, padding_y, font_size);
-    render_photo_reveal(padding_x, padding_y, line_spacing, font_size);
+    render_territory_status(shop, padding_x, padding_y, line_spacing, font_size);
     render_discoveries(padding_x, padding_y, line_spacing, font_size);
 
     if (shop->shop_open) {
@@ -41,18 +42,29 @@ private:
                        raylib::WHITE);
   }
 
-  void render_photo_reveal(float padding_x, float padding_y, float line_spacing,
-                           float font_size) const {
+  void render_territory_status(IsShopManager *shop, float padding_x,
+                               float padding_y, float line_spacing,
+                               float font_size) const {
     IsPhotoReveal *photo_reveal =
         afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
     invariant(photo_reveal, "IsPhotoReveal singleton not found");
+
+    // Region coverage: how much of the current region's streets are imaged.
     float reveal_percentage = photo_reveal->get_reveal_percentage();
-    std::string reveal_text =
-        "Revealed: " + std::to_string(static_cast<int>(reveal_percentage)) +
-        "%";
-    raylib::DrawTextEx(uiFont, reveal_text.c_str(),
+    std::string region_text =
+        std::string(shop->get_scope_name()) + " mapped: " +
+        std::to_string(static_cast<int>(reveal_percentage)) + "%";
+    raylib::DrawTextEx(uiFont, region_text.c_str(),
                        {padding_x, padding_y + line_spacing}, font_size, 1.0f,
                        raylib::WHITE);
+
+    // Headline countdown: share of the world still unmapped (100% -> 0%).
+    char share_buf[48];
+    std::snprintf(share_buf, sizeof(share_buf), "World unmapped: %.2f%%",
+                  static_cast<double>(shop->get_unmapped_share()));
+    raylib::DrawTextEx(uiFont, share_buf,
+                       {padding_x, padding_y + line_spacing * 2.0f}, font_size,
+                       1.0f, raylib::Color{232, 84, 30, 255});
   }
 
   void render_shop(IsShopManager *shop, int screen_width, int screen_height,
@@ -60,7 +72,7 @@ private:
     float shop_x = screen_width * 0.5f;
     float shop_y = screen_height * 0.5f;
     float shop_width = screen_width * 0.4f;
-    float shop_height = screen_height * 0.6f;
+    float shop_height = screen_height * 0.72f;
     float shop_padding = 20.0f;
 
     raylib::DrawRectangle(static_cast<int>(shop_x - shop_width / 2.0f),
@@ -115,13 +127,31 @@ private:
     item_y += item_spacing;
     std::string algorithm_name =
         get_algorithm_name(shop->get_current_algorithm());
-    render_shop_button(
+    item_y = render_shop_button(
         shop, shop_x, shop_width, shop_padding, item_y, button_width,
         button_height, font_size, mouse_pos, mouse_clicked,
         shop->get_maze_algorithm_cost(), shop->maze_algorithm_level,
         [shop]() { shop->purchase_maze_algorithm(); },
         "Maze Algorithm: " + algorithm_name + " (Lv " +
             std::to_string(shop->maze_algorithm_level) + ")");
+
+    item_y += item_spacing;
+    item_y = render_shop_button(
+        shop, shop_x, shop_width, shop_padding, item_y, button_width,
+        button_height, font_size, mouse_pos, mouse_clicked,
+        shop->get_expansion_cost(), shop->expand_level,
+        [shop]() { shop->purchase_expansion(); },
+        "Map Expansion: " + std::string(shop->get_scope_name()) + " (Lv " +
+            std::to_string(shop->expand_level) + ")");
+
+    item_y += item_spacing;
+    render_shop_button(
+        shop, shop_x, shop_width, shop_padding, item_y, button_width,
+        button_height, font_size, mouse_pos, mouse_clicked,
+        shop->get_buyout_cost(), shop->buyout_level,
+        [shop]() { shop->purchase_buyout(); },
+        "Buy Out Rival Mapper (" + std::to_string(shop->buyout_level) + "/" +
+            std::to_string(shop->rival_company_count()) + ")");
   }
 
   std::string get_algorithm_name(MazeAlgorithm algo) const {
@@ -179,7 +209,7 @@ private:
 
   void render_shop_hint(float padding_x, float padding_y, float line_spacing,
                         float font_size) const {
-    float hint_y = padding_y + line_spacing * 2.0f;
+    float hint_y = padding_y + line_spacing * 4.0f;
     raylib::DrawTextEx(uiFont, "Press TAB to open shop", {padding_x, hint_y},
                        font_size * 0.8f, 1.0f, raylib::GRAY);
   }
@@ -206,7 +236,7 @@ private:
     }
 
     if (total_count > 0) {
-      float discovery_y = padding_y + line_spacing * 2.0f;
+      float discovery_y = padding_y + line_spacing * 3.0f;
       std::string discovery_text =
           "Discoveries: " + std::to_string(discovered_count) + "/" +
           std::to_string(total_count);

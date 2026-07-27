@@ -146,6 +146,74 @@ struct IsShopManager : afterhours::BaseComponent {
       return MazeAlgorithm::AStar;
     }
   }
+
+  // --- Territory / Street View mapping expansion ---
+  // You map one region's streets, then expand into the next. The headline
+  // countdown is the share of the world still unmapped (100% -> 0%).
+  int expand_level{0}; // regions/scopes expanded into
+  int buyout_level{0}; // rival mapping companies bought out
+  bool region_complete{false}; // current region fully imaged (set by system)
+
+  static constexpr int EXPAND_MAX = 12; // 3 steps each: City/Country/Continent/Earth
+  static constexpr int REGION_COMPLETE_BONUS = 500;
+
+  int rival_company_count() const { return expand_level / 4 + 1; }
+
+  const char *get_scope_name() const {
+    if (expand_level < 3)
+      return "City";
+    if (expand_level < 6)
+      return "Country";
+    if (expand_level < 9)
+      return "Continent";
+    return "Earth";
+  }
+
+  int get_expansion_cost() const {
+    int cost = get_upgrade_cost(200, expand_level);
+    // Finishing the current region discounts the jump to the next.
+    return region_complete ? cost / 2 : cost;
+  }
+
+  bool purchase_expansion() {
+    if (expand_level >= EXPAND_MAX) {
+      return false;
+    }
+    int cost = get_expansion_cost();
+    if (pixels_collected >= cost) {
+      pixels_collected -= cost;
+      expand_level++;
+      region_complete = false;
+      return true;
+    }
+    return false;
+  }
+
+  int get_buyout_cost() const { return get_upgrade_cost(2500, buyout_level); }
+
+  bool purchase_buyout() {
+    if (buyout_level >= rival_company_count()) {
+      return false;
+    }
+    int cost = get_buyout_cost();
+    if (pixels_collected >= cost) {
+      pixels_collected -= cost;
+      buyout_level++;
+      return true;
+    }
+    return false;
+  }
+
+  // Share of the world still unmapped: 100% -> 0%. Reaches 0 only when fully
+  // expanded (every scope) AND every rival mapper has been bought out.
+  float get_unmapped_share() const {
+    float reached = static_cast<float>(expand_level) / EXPAND_MAX;
+    int rivals = rival_company_count();
+    float claimed =
+        rivals > 0 ? static_cast<float>(buyout_level) / rivals : 0.0f;
+    float owned_pct = 0.01f + 100.0f * reached * claimed;
+    return std::max(0.0f, 100.0f - owned_pct);
+  }
 };
 
 struct RevealedRect {

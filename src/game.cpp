@@ -31,6 +31,7 @@
 #include "systems/RenderSystemHelpers.h"
 #include "systems/RevealFogOfWar.h"
 #include "systems/SpawnNewCars.h"
+#include "systems/TerritoryProgress.h"
 #include "systems/TestSystem.h"
 #include "systems/UpdateCarUpgrades.h"
 #include "testing/test_app.h"
@@ -85,6 +86,7 @@ void game() {
     systems.register_update_system(std::make_unique<HandleCameraControls>());
     systems.register_update_system(std::make_unique<HandleShopInput>());
     systems.register_update_system(std::make_unique<SpawnNewCars>());
+    systems.register_update_system(std::make_unique<TerritoryProgress>());
     systems.register_update_system(std::make_unique<UpdateCarUpgrades>());
     systems.register_update_system(std::make_unique<RevealFogOfWar>());
     systems.register_update_system(
