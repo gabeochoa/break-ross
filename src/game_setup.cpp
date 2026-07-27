@@ -425,9 +425,6 @@ void setup_game() {
     if (debug_segment < road_network->segments.size()) {
       square_start_position = road_network->segments[debug_segment].start;
       initial_segment_index = debug_segment;
-      log_info("DEBUG: Spawning square at segment {} (problematic area) - "
-               "position=({:.1f}, {:.1f})",
-               debug_segment, square_start_position.x, square_start_position.y);
     } else {
       square_start_position = road_network->segments[0].start;
       initial_segment_index = 0;

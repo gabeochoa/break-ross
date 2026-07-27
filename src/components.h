@@ -111,19 +111,11 @@ struct IsShopManager : afterhours::BaseComponent {
 
   bool purchase_new_car() {
     int cost = get_new_car_cost();
-    log_info(
-        "purchase_new_car: cost={}, pixels_collected={}, current_car_count={}",
-        cost, pixels_collected, car_count);
     if (pixels_collected >= cost) {
       pixels_collected -= cost;
       car_count++;
-      log_info("purchase_new_car: purchase successful! new car_count={}, "
-               "remaining_pixels={}",
-               car_count, pixels_collected);
       return true;
     }
-    log_warn("purchase_new_car: insufficient funds! need {}, have {}", cost,
-             pixels_collected);
     return false;
   }
 

@@ -19,32 +19,7 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
         afterhours::EntityHelper::get_singleton_cmp<IsShopManager>();
     invariant(shop, "IsShopManager singleton not found");
 
-    if (shop->car_count <= last_car_count) {
-      return false;
-    }
-
-    bool has_cars = false;
-    int car_count_found = 0;
-    for ([[maybe_unused]] const Transform &transform :
-         afterhours::EntityQuery()
-             .whereHasTag(ColliderTag::Circle)
-             .whereHasComponent<Transform>()
-             .gen_as<Transform>()) {
-      has_cars = true;
-      car_count_found++;
-    }
-
-    log_info("SpawnNewCars::should_run: car_count={}, last_car_count={}, "
-             "has_cars={}, cars_found={}",
-             shop->car_count, last_car_count, has_cars, car_count_found);
-
-    if (shop->car_count > 0 && !has_cars) {
-      log_info("SpawnNewCars::should_run: no cars exist but car_count > 0, "
-               "will spawn at default position");
-      return true;
-    }
-
-    return has_cars;
+    return shop->car_count > last_car_count;
   }
 
   virtual void once(float) override {
@@ -61,45 +36,29 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
       cars_found++;
     }
 
+    // Prevent a ghost car spawn on a fresh start, and keep last_car_count in
+    // sync when we're not behind. Otherwise leave it so for_each_with spawns
+    // the difference (car_count - last_car_count).
     if (cars_found == 0 && shop->car_count == 1) {
       last_car_count = 1;
-      log_info("SpawnNewCars::once: initializing last_car_count=1 to prevent "
-               "ghost car spawn on start");
     } else if (shop->car_count <= last_car_count) {
       last_car_count = shop->car_count;
-      log_info("SpawnNewCars::once: initialized last_car_count={} "
-               "(cars_found={}, car_count={})",
-               last_car_count, cars_found, shop->car_count);
-    } else {
-      log_info("SpawnNewCars::once: car_count={} > last_car_count={}, "
-               "keeping last_car_count to allow spawning in for_each_with",
-               shop->car_count, last_car_count);
     }
   }
 
   virtual void for_each_with(afterhours::Entity &, IsShopManager &shop,
                              float) override {
-
     int cars_to_spawn = shop.car_count - last_car_count;
-    log_info("SpawnNewCars::for_each_with: car_count={}, last_car_count={}, "
-             "cars_to_spawn={}",
-             shop.car_count, last_car_count, cars_to_spawn);
-
     last_car_count = shop.car_count;
 
     Transform *existing_car_transform_ptr = nullptr;
-    int cars_found = 0;
     for (Transform &transform : afterhours::EntityQuery()
                                     .whereHasTag(ColliderTag::Circle)
                                     .whereHasComponent<Transform>()
                                     .gen_as<Transform>()) {
-      if (!existing_car_transform_ptr) {
-        existing_car_transform_ptr = &transform;
-      }
-      cars_found++;
+      existing_car_transform_ptr = &transform;
+      break;
     }
-
-    log_info("SpawnNewCars: found {} existing cars", cars_found);
 
     float radius = 6.0f;
     int damage = shop.get_car_damage_value();
@@ -115,8 +74,6 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
         spawn_position = {game_constants::WORLD_WIDTH * 0.5f,
                           game_constants::WORLD_HEIGHT * 0.5f};
         base_velocity = {200.0f, 200.0f};
-        log_info(
-            "SpawnNewCars: no road network or fog, using default position");
       } else {
         std::vector<size_t> explored_segments;
         for (size_t i = 0; i < road_network->segments.size(); ++i) {
@@ -144,15 +101,10 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
           } else {
             base_velocity = {200.0f, 200.0f};
           }
-          log_info("SpawnNewCars: spawning at explored segment {} position "
-                   "({:.1f}, {:.1f})",
-                   chosen_seg, spawn_position.x, spawn_position.y);
         } else {
           spawn_position = {game_constants::WORLD_WIDTH * 0.5f,
                             game_constants::WORLD_HEIGHT * 0.5f};
           base_velocity = {200.0f, 200.0f};
-          log_info("SpawnNewCars: no explored segments found, using default "
-                   "position");
         }
       }
     } else {
@@ -161,11 +113,6 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
       base_velocity = existing_car_transform.velocity;
     }
 
-    log_info(
-        "SpawnNewCars: existing car at ({:.1f}, {:.1f}), velocity ({:.1f}, "
-        "{:.1f})",
-        spawn_position.x, spawn_position.y, base_velocity.x, base_velocity.y);
-
     static std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<float> angle_dist(-1.0f, 1.0f);
     std::uniform_real_distribution<float> speed_variation(0.7f, 1.3f);
@@ -173,8 +120,6 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
     float base_speed = std::sqrt(base_velocity.x * base_velocity.x +
                                  base_velocity.y * base_velocity.y);
     if (base_speed < 0.1f) {
-      log_info("SpawnNewCars: base speed too low ({:.1f}), using default",
-               base_speed);
       base_velocity = {200.0f, 200.0f};
       base_speed = std::sqrt(base_velocity.x * base_velocity.x +
                              base_velocity.y * base_velocity.y);
@@ -185,15 +130,9 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
     std::uniform_real_distribution<float> position_offset_dist(-radius * 0.5f,
                                                                radius * 0.5f);
 
-    log_info("SpawnNewCars: spawning {} cars with base_speed={:.1f}, "
-             "base_angle={:.2f}",
-             cars_to_spawn, base_speed, base_angle);
-
     for (int i = 0; i < cars_to_spawn; ++i) {
-      float angle_offset = angle_dist(rng);
-      float speed_mult = speed_variation(rng);
-      float new_angle = base_angle + angle_offset;
-      float new_speed = base_speed * speed_mult;
+      float new_angle = base_angle + angle_dist(rng);
+      float new_speed = base_speed * speed_variation(rng);
       vec2 varied_velocity = {std::cos(new_angle) * new_speed,
                               std::sin(new_angle) * new_speed};
 
@@ -201,14 +140,7 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
       offset_position.x += position_offset_dist(rng);
       offset_position.y += position_offset_dist(rng);
 
-      log_info("SpawnNewCars: spawning car {} at ({:.1f}, {:.1f}) with "
-               "velocity ({:.1f}, {:.1f}), speed={:.1f}, angle={:.2f}",
-               i + 1, offset_position.x, offset_position.y, varied_velocity.x,
-               varied_velocity.y, new_speed, new_angle);
-
       make_car(offset_position, varied_velocity, radius, damage);
     }
-
-    log_info("SpawnNewCars: finished spawning {} cars", cars_to_spawn);
   }
 };
