@@ -26,42 +26,20 @@ enum struct ColliderTag : afterhours::TagId {
   Square = 2,
 };
 
-struct HasHealth : afterhours::BaseComponent {
-  int max_amount{0};
-  int amount{0};
-
-  HasHealth() = default;
-  HasHealth(int max_amount_in)
-      : max_amount(max_amount_in), amount(max_amount_in) {}
-  HasHealth(int max_amount_in, int amount_in)
-      : max_amount(max_amount_in), amount(amount_in) {}
-};
-
-struct CanDamage : afterhours::BaseComponent {
-  afterhours::EntityID id;
-  int amount;
-
-  CanDamage() = default;
-  CanDamage(afterhours::EntityID id_in, int amount_in)
-      : id(id_in), amount(amount_in) {}
-};
-
 enum class MazeAlgorithm { WallFollower, Tremaux, DFS, AStar };
 
 struct IsShopManager : afterhours::BaseComponent {
   int car_cost;
-  int car_damage;
   int pixels_collected;
 
   int car_speed_level{0};
-  int car_damage_level{0};
   int car_count{20};
 
   bool shop_open{false};
 
   IsShopManager() = default;
-  IsShopManager(int cost, int damage, int pixels_in)
-      : car_cost(cost), car_damage(damage), pixels_collected(pixels_in) {}
+  IsShopManager(int cost, int pixels_in)
+      : car_cost(cost), pixels_collected(pixels_in) {}
 
   int get_upgrade_cost(int base_cost, int level) const {
     return static_cast<int>(base_cost * std::pow(1.5, level));
@@ -69,10 +47,6 @@ struct IsShopManager : afterhours::BaseComponent {
 
   int get_car_speed_cost() const {
     return get_upgrade_cost(50, car_speed_level);
-  }
-
-  int get_car_damage_cost() const {
-    return get_upgrade_cost(500, car_damage_level);
   }
 
   int get_new_car_cost() const {
@@ -85,25 +59,11 @@ struct IsShopManager : afterhours::BaseComponent {
     return 1.0f + (car_speed_level * 0.2f);
   }
 
-  int get_car_damage_value() const {
-    return car_damage + (car_damage_level * 1);
-  }
-
   bool purchase_car_speed() {
     int cost = get_car_speed_cost();
     if (pixels_collected >= cost) {
       pixels_collected -= cost;
       car_speed_level++;
-      return true;
-    }
-    return false;
-  }
-
-  bool purchase_car_damage() {
-    int cost = get_car_damage_cost();
-    if (pixels_collected >= cost) {
-      pixels_collected -= cost;
-      car_damage_level++;
       return true;
     }
     return false;
@@ -378,63 +338,6 @@ struct IsPhotoReveal : afterhours::BaseComponent {
 
   void update_reveal_percentage() {
     reveal_percentage = get_reveal_percentage();
-  }
-};
-
-struct MergedBrickRect {
-  int grid_x;
-  int grid_y;
-  int width;
-  int height;
-};
-
-struct BrickGrid : afterhours::BaseComponent {
-  std::array<std::array<uint8_t, 50>, game_constants::GRID_HEIGHT> health_data;
-  mutable std::vector<MergedBrickRect> cached_rects;
-  mutable bool rects_dirty{true};
-  mutable raylib::Texture2D health_texture{};
-  mutable bool health_texture_dirty{true};
-
-  BrickGrid() {
-    for (auto &row : health_data) {
-      row.fill(0);
-    }
-  }
-
-  short get_health(int grid_x, int grid_y) const {
-    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
-        grid_y >= game_constants::GRID_HEIGHT) {
-      return 0;
-    }
-    uint8_t byte = health_data[grid_y][grid_x / 2];
-    int shift = (grid_x & 1) * 4;
-    return (byte >> shift) & 0x0F;
-  }
-
-  void set_health(int grid_x, int grid_y, short health) {
-    if (grid_x < 0 || grid_x >= game_constants::GRID_WIDTH || grid_y < 0 ||
-        grid_y >= game_constants::GRID_HEIGHT) {
-      return;
-    }
-    health =
-        static_cast<short>(std::max(0, std::min(15, static_cast<int>(health))));
-
-    uint8_t &byte = health_data[grid_y][grid_x / 2];
-    int shift = (grid_x & 1) * 4;
-    uint8_t inverse_mask = static_cast<uint8_t>(0xF0 >> shift);
-    byte =
-        (byte & inverse_mask) | static_cast<uint8_t>((health & 0x0F) << shift);
-    rects_dirty = true;
-    health_texture_dirty = true;
-  }
-
-  void add_health(int grid_x, int grid_y, short delta) {
-    short current = get_health(grid_x, grid_y);
-    set_health(grid_x, grid_y, current + delta);
-  }
-
-  bool has_brick(int grid_x, int grid_y) const {
-    return get_health(grid_x, grid_y) > 0;
   }
 };
 

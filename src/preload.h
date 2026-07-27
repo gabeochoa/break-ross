@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "log.h" // defines AFTER_HOURS_REPLACE_LOGGING before any afterhours header
 #include <afterhours/src/library.h>
 #include <afterhours/src/singleton.h>
 

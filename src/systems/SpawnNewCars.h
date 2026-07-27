@@ -61,7 +61,6 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
     }
 
     float radius = 6.0f;
-    int damage = shop.get_car_damage_value();
     vec2 spawn_position;
     vec2 base_velocity;
 
@@ -140,7 +139,7 @@ struct SpawnNewCars : afterhours::System<IsShopManager> {
       offset_position.x += position_offset_dist(rng);
       offset_position.y += position_offset_dist(rng);
 
-      make_car(offset_position, varied_velocity, radius, damage);
+      make_car(offset_position, varied_velocity, radius);
     }
   }
 };

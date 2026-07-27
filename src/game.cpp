@@ -12,12 +12,10 @@
 #include "systems/CarPhysics.h"
 #include "systems/DiscoverySystem.h"
 #include "systems/HandleCameraControls.h"
-#include "systems/HandleCollisions.h"
 #include "systems/HandleShopInput.h"
 #include "systems/LoopDetection.h"
 #include "systems/MazeTraversal.h"
 #include "systems/RebuildPhotoReveal.h"
-#include "systems/RenderBrick.h"
 #include "systems/RenderCar.h"
 #include "systems/RenderFPS.h"
 #include "systems/RenderFogOfWar.h"
@@ -79,7 +77,6 @@ void game() {
     systems.register_fixed_update_system(std::make_unique<CarPhysics>());
     systems.register_fixed_update_system(std::make_unique<MazeTraversal>());
     systems.register_fixed_update_system(std::make_unique<LoopDetection>());
-    systems.register_fixed_update_system(std::make_unique<HandleCollisions>());
     systems.register_fixed_update_system(
         std::make_unique<RebuildPhotoReveal>());
 
@@ -105,7 +102,6 @@ void game() {
     // Disabled
     systems.register_render_system(std::make_unique<RenderRoads>());
     systems.register_render_system(std::make_unique<RenderPOIs>());
-    systems.register_render_system(std::make_unique<RenderBrick>());
     systems.register_render_system(std::make_unique<RenderCar>());
     systems.register_render_system(std::make_unique<RenderSquare>());
     systems.register_render_system(std::make_unique<RenderFogOfWar>());

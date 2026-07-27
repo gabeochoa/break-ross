@@ -33,13 +33,11 @@ static afterhours::Entity &get_sophie() {
   return sophie;
 }
 
-afterhours::Entity &make_car(vec2 position, vec2 velocity, float radius,
-                             int damage) {
+afterhours::Entity &make_car(vec2 position, vec2 velocity, float radius) {
   afterhours::Entity &car = afterhours::EntityHelper::createEntity();
   car.addComponent<Transform>(position, velocity,
                               vec2{radius * 2.0f, radius * 2.0f});
   car.enableTag(ColliderTag::Circle);
-  car.addComponent<CanDamage>(car.id, damage);
 
   RoadNetwork *road_network =
       afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();
@@ -326,9 +324,8 @@ static void spawn_pois(RoadNetwork *road_network) {
 void setup_game() {
   afterhours::Entity &sophie = get_sophie();
 
-  addIfMissing<IsShopManager>(sophie, 100, 1, 100);
+  addIfMissing<IsShopManager>(sophie, 100, 100);
   addIfMissing<IsPhotoReveal>(sophie, game_constants::BRICK_CELL_SIZE);
-  addIfMissing<BrickGrid>(sophie);
   addIfMissing<RoadNetwork>(sophie);
   addIfMissing<FogOfWar>(sophie);
   addIfMissing<afterhours::camera::HasCamera>(sophie);

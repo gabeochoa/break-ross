@@ -11,7 +11,7 @@
 #include "settings.h"
 #include <afterhours/src/plugins/color.h>
 #include <afterhours/src/plugins/files.h>
-#include <afterhours/src/plugins/ui/theme_defaults.h>
+#include <afterhours/src/plugins/ui/theme.h>
 
 using namespace afterhours;
 
@@ -58,11 +58,15 @@ Preload &Preload::init(const char *title) {
 }
 
 Preload &Preload::make_singleton() {
-  auto &sophie = EntityHelper::createEntity();
+  // init_ui_plugin creates the UI root entity and registers all UI singletons
+  // (UIContext, FontManager, TextMeasureCache, AutoLayoutRoot component, etc.).
+  auto &sophie = ui::init_ui_plugin<InputAction>();
   {
     input::add_singleton_components(sophie, get_mapping());
     window_manager::add_singleton_components(sophie, 200);
-    ui::add_singleton_components<InputAction>(sophie);
+    // init_ui_plugin adds AutoLayoutRoot but doesn't register it as a singleton;
+    // get_sophie() looks the entity up by this singleton.
+    EntityHelper::registerSingleton<ui::AutoLayoutRoot>(sophie);
 
     ui::imm::ThemeDefaults::get()
         .set_theme_color(ui::Theme::Usage::Primary, colors::UI_GREEN)
@@ -71,14 +75,6 @@ Preload &Preload::make_singleton() {
         .set_theme_color(ui::Theme::Usage::Background, colors::UI_BLACK)
         .set_theme_color(ui::Theme::Usage::Secondary, raylib::YELLOW)
         .set_theme_color(ui::Theme::Usage::Accent, raylib::GREEN);
-
-    sophie.addComponent<ui::AutoLayoutRoot>();
-    EntityHelper::registerSingleton<ui::AutoLayoutRoot>(sophie);
-    sophie.addComponent<ui::UIComponentDebug>("sophie");
-    sophie.addComponent<ui::UIComponent>(sophie.id)
-        .set_desired_width(afterhours::ui::screen_pct(1.f))
-        .set_desired_height(afterhours::ui::screen_pct(1.f))
-        .enable_font(afterhours::ui::UIComponent::DEFAULT_FONT, 75.f);
   }
   return *this;
 }
