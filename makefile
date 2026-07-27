@@ -8,7 +8,8 @@ ifeq ($(UNAME_S),Darwin)
     RAYLIB_FLAGS := $(shell pkg-config --cflags raylib)
     RAYLIB_LIB := $(shell pkg-config --libs raylib)
     MACOS_FLAGS := -DBACKWARD
-    FRAMEWORKS := -framework CoreFoundation
+    # OpenGL: afterhours' headless capture backend references CGL/gl* directly
+    FRAMEWORKS := -framework CoreFoundation -framework OpenGL
 else ifeq ($(OS),Windows_NT)
     CXX := g++
     EXT := .exe
@@ -79,6 +80,9 @@ endif
 # Combine all CXXFLAGS
 CXXFLAGS := $(CXXSTD) $(CXXFLAGS_BASE) $(CXXFLAGS_SUPPRESS) $(CXXFLAGS_TIME_TRACE) \
     $(MACOS_FLAGS) $(COVERAGE_CXXFLAGS) $(RAYLIB_FLAGS)
+
+# afterhours: keep UI entities in the default collection (pre-split behavior)
+CXXFLAGS += -DAFTER_HOURS_UI_SINGLE_COLLECTION
 
 # Include directories
 INCLUDES := -Ivendor/
