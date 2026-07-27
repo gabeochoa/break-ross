@@ -15,9 +15,6 @@ struct MazeTraversal
     : afterhours::System<
           Transform, RoadFollowing,
           afterhours::tags::Any<ColliderTag::Square, ColliderTag::Circle>> {
-  static size_t last_segment_index;
-  static size_t second_last_segment_index;
-
   static bool detect_loop(const std::vector<size_t> &recent_segments,
                           size_t next_seg) {
     if (recent_segments.size() < 4) {
@@ -229,13 +226,15 @@ struct MazeTraversal
         }
       }
 
-      second_last_segment_index = last_segment_index;
-      last_segment_index = road_following.current_segment_index;
       road_following.current_segment_index = next_segment_index;
       road_following.reverse_direction = next_reverse_direction;
     } else {
-      log_warn("MazeTraversal: Car stuck at segment {}, no next segment found",
-               road_following.current_segment_index);
+      // True dead end (no connections at this endpoint): a wall-follower turns
+      // around and heads back the way it came instead of freezing in place.
+      // Cars are Circle-tagged, so LoopDetection (Square-only) never rescues
+      // them, so recovery must be self-contained here.
+      road_following.reverse_direction = !road_following.reverse_direction;
+      road_following.segment_history.clear();
     }
 
     road_following.last_position = transform.position;
@@ -295,8 +294,6 @@ private:
     std::vector<Candidate> candidates;
 
     std::set<size_t> recent_segments;
-    recent_segments.insert(last_segment_index);
-    recent_segments.insert(second_last_segment_index);
     for (size_t hist_seg : road_following.segment_history) {
       recent_segments.insert(hist_seg);
     }
@@ -347,15 +344,10 @@ private:
     }
 
     if (candidates.empty()) {
-      std::set<size_t> recent_segments_fallback;
-      recent_segments_fallback.insert(last_segment_index);
-      recent_segments_fallback.insert(second_last_segment_index);
+      // Last resort: every exit was in this car's recent history. Allow any
+      // connection (including backtracking) rather than freezing.
       for (const auto &[connected_seg, use_reverse] : connections) {
         if (connected_seg == current_seg) {
-          continue;
-        }
-        if (recent_segments_fallback.find(connected_seg) !=
-            recent_segments_fallback.end()) {
           continue;
         }
         const RoadSegment &candidate_seg =
@@ -506,8 +498,6 @@ private:
     bool best_reverse = false;
 
     std::set<size_t> recent_segments;
-    recent_segments.insert(last_segment_index);
-    recent_segments.insert(second_last_segment_index);
     for (size_t hist_seg : road_following.segment_history) {
       recent_segments.insert(hist_seg);
     }
@@ -611,6 +601,3 @@ private:
     next_reverse_direction = best_reverse;
   }
 };
-
-size_t MazeTraversal::last_segment_index = SIZE_MAX;
-size_t MazeTraversal::second_last_segment_index = SIZE_MAX;
