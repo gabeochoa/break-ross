@@ -3,7 +3,7 @@ UNAME_S := $(shell uname -s)
 
 # Compiler settings
 ifeq ($(UNAME_S),Darwin)
-    CXX := clang++
+    CXX := zig c++
     EXT := .exe
     RAYLIB_FLAGS := $(shell pkg-config --cflags raylib)
     RAYLIB_LIB := $(shell pkg-config --libs raylib)
@@ -11,6 +11,10 @@ ifeq ($(UNAME_S),Darwin)
     # OpenGL: afterhours' headless capture backend references CGL/gl* directly
     FRAMEWORKS := -framework CoreFoundation -framework OpenGL
 else ifeq ($(OS),Windows_NT)
+    # Still host-detection, not cross-compilation: unlike kart, there is no
+    # vendored Windows raylib here to link against, so `zig c++ -target
+    # x86_64-windows-gnu` has nothing to point RAYLIB_LIB at. Vendor a
+    # raylib.dll import lib and this can become a TARGET=windows branch.
     CXX := g++
     EXT := .exe
     RAYLIB_FLAGS := -IF:/RayLib/include
@@ -18,7 +22,7 @@ else ifeq ($(OS),Windows_NT)
     MACOS_FLAGS :=
     FRAMEWORKS :=
 else
-    CXX := clang++
+    CXX := zig c++
     EXT :=
     RAYLIB_FLAGS := $(shell pkg-config --cflags raylib)
     RAYLIB_LIB := $(shell pkg-config --libs raylib)
@@ -75,6 +79,9 @@ ifeq ($(COVERAGE),1)
         COVERAGE_CXXFLAGS := --coverage
         COVERAGE_LDFLAGS := --coverage
     endif
+    # zig ships no LLVM profile runtime (link fails on ___llvm_profile_runtime),
+    # so coverage builds fall back to the system compiler.
+    CXX := clang++
 endif
 
 # Combine all CXXFLAGS
