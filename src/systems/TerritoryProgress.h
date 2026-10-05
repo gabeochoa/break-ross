@@ -41,7 +41,6 @@ private:
     photo_reveal->merged_rects.clear();
     photo_reveal->merged_rects_dirty = true;
     photo_reveal->mask_texture_dirty = true;
-    photo_reveal->reveal_percentage = 0.0f;
 
     RoadNetwork *road_network =
         afterhours::EntityHelper::get_singleton_cmp<RoadNetwork>();

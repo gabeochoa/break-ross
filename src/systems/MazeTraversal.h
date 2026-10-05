@@ -93,8 +93,8 @@ struct MazeTraversal
     IsPhotoReveal *photo_reveal =
         afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
     invariant(photo_reveal, "IsPhotoReveal singleton not found");
-    float reveal_percentage = photo_reveal->get_reveal_percentage();
-    bool prioritize_unvisited = reveal_percentage >= 90.0f;
+    float reveal_pct = photo_reveal->get_reveal_percentage();
+    bool prioritize_unvisited = reveal_pct >= 90.0f;
 
     // Update segments_without_reveal counter
     if (just_revealed) {
@@ -258,8 +258,8 @@ private:
     IsPhotoReveal *photo_reveal =
         afterhours::EntityHelper::get_singleton_cmp<IsPhotoReveal>();
     invariant(photo_reveal, "IsPhotoReveal singleton not found");
-    float reveal_percentage = photo_reveal->get_reveal_percentage();
-    bool prioritize_unvisited = reveal_percentage >= 90.0f;
+    float reveal_pct = photo_reveal->get_reveal_percentage();
+    bool prioritize_unvisited = reveal_pct >= 90.0f;
 
     // Determine which endpoint we're at: 0 = start, 1 = end
     size_t endpoint_idx = road_following.reverse_direction ? 0 : 1;

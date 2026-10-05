@@ -51,10 +51,10 @@ private:
     invariant(photo_reveal, "IsPhotoReveal singleton not found");
 
     // Region coverage: how much of the current region's streets are imaged.
-    float reveal_percentage = photo_reveal->get_reveal_percentage();
+    float reveal_pct = photo_reveal->get_reveal_percentage();
     std::string region_text =
         std::string(shop->get_scope_name()) + " mapped: " +
-        std::to_string(static_cast<int>(reveal_percentage)) + "%";
+        std::to_string(static_cast<int>(reveal_pct)) + "%";
     raylib::DrawTextEx(uiFont, region_text.c_str(),
                        {padding_x, padding_y + line_spacing}, font_size, 1.0f,
                        palette::INK);

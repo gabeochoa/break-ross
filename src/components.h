@@ -197,7 +197,7 @@ struct IsPhotoReveal : afterhours::BaseComponent {
   int mask_shader_mask_loc{-1};
   int mask_shader_mask_scale_loc{-1};
   bool is_loaded{false};
-  float reveal_percentage{0.0f};
+  // No cached reveal_percentage: derived-only via get_reveal_percentage() (stale-cache class, f1ce7ca/666fb0c).
   bool merged_rects_dirty{false};
   mutable bool mask_texture_dirty{true};
 
@@ -321,7 +321,6 @@ struct IsPhotoReveal : afterhours::BaseComponent {
         merged_rects.push_back(rect);
       }
     }
-    update_reveal_percentage();
   }
 
   float get_reveal_percentage() const {
@@ -336,9 +335,6 @@ struct IsPhotoReveal : afterhours::BaseComponent {
            100.0f;
   }
 
-  void update_reveal_percentage() {
-    reveal_percentage = get_reveal_percentage();
-  }
 };
 
 enum class RoadType { Highway, Primary, Secondary, Residential };
