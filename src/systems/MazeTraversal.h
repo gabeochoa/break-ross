@@ -110,9 +110,6 @@ struct MazeTraversal
     if (prioritize_unvisited && road_following.segments_without_reveal >= 5) {
       size_t random_unvisited = road_network->find_random_unvisited_segment();
       if (random_unvisited != SIZE_MAX) {
-        log_info("MazeTraversal: At 90%+, jumping to unvisited segment {} "
-                 "after {} visited segments",
-                 random_unvisited, road_following.segments_without_reveal);
         road_following.current_segment_index = random_unvisited;
         road_following.progress_along_segment = 0.0f;
         road_following.reverse_direction = false;
@@ -188,9 +185,6 @@ struct MazeTraversal
           size_t random_unvisited =
               road_network->find_random_unvisited_segment();
           if (random_unvisited != SIZE_MAX) {
-            log_info("MazeTraversal: At 90%+, no unvisited at junction, "
-                     "jumping to unvisited segment {}",
-                     random_unvisited);
             next_segment_index = random_unvisited;
             next_reverse_direction = false;
             road_following.segment_history.clear();

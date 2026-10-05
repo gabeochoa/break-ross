@@ -258,3 +258,7 @@ endif
 
 .PHONY: count countall cppcheck prof prof-sample prof-small
 
+.PHONY: check
+check:
+	sh scripts/check_no_cached_reveal.sh
+	sh scripts/check_systems_guards.sh

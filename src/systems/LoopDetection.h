@@ -53,14 +53,10 @@ struct LoopDetection
         // Update transform position to the start of the new segment
         const RoadSegment &new_seg = road_network->segments[unvisited_seg];
         transform.position = new_seg.start;
-        log_info("LoopDetection: Jumping to unvisited segment {} after {} "
-                 "forced direction attempts",
-                 unvisited_seg, attempts);
         return;
       }
       // All segments visited! Reset attempts counter
       road_following.forced_direction_attempts = 0;
-      log_info("LoopDetection: All segments visited!");
     }
 
     // Calculate current direction
